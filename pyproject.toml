@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "playauth"
+version = "0.1.0"
+description = ""
+authors = ["enchance <enchance@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.95.1"
+pydantic = {extras = ["dotenv", "email"], version = "^1.10.7"}
+uvicorn = "^0.22.0"
+icecream = "^2.1.3"
+ujson = "^5.7.0"
+tortoise-orm = {extras = ["asyncpg"], version = "^0.19.3"}
+fastapi-users-tortoise = "^0.2.0"
+aerich = "^0.7.1"
+python-decouple = "^3.8"
+limeutils = "^0.2.12"
+
+
+
+[tool.aerich]
+tortoise_orm = "app.db.TORTOISE_ORM"
+location = "./migrations"
+src_folder = "./."
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
