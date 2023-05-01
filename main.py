@@ -3,7 +3,7 @@ from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import settings as s, register_db, Env
-from app.auth import Account
+from app.auth import Account, AccountResponse
 
 
 def get_app() -> FastAPI:
@@ -27,10 +27,14 @@ def get_app() -> FastAPI:
 app = get_app()
 
 
-@app.get('/')
+@app.get('/', response_model=AccountResponse)
 async def create_user():
-    account = await Account.create(username='abc', email='abc@gmail.com', hashed_password='foobar')
+    #  OAuth
+    # account = await Account.create(display='abc', email='abc@gmail.com', hashed_password='foobar',
+    #                                oauth_name='', access_token='', refresh_token='', account_id='')
+    account = await Account.create(display='abc', email='abc@gmail.com', hashed_password='foobar')
     return account
+
 
 @app.put('/')
 async def update(email: Annotated[str, Body()], username: Annotated[str, Body()]):
