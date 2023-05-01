@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from app import settings as s, register_db
+from app import settings as s, register_db, Env
 from app.auth import Account
 
 
@@ -9,6 +10,15 @@ def get_app() -> FastAPI:
     
     # Tortoise
     register_db(app_)
+    
+    # CORS
+    origins = [
+        'http://localhost:3000', 'https://localhost:3000',
+    ]
+    app_.add_middleware(
+        CORSMiddleware, allow_origins=origins, allow_credentials=True,
+        allow_methods=['*'], allow_headers=["*"],
+    )
     
     return app_
 

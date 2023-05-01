@@ -3,5 +3,5 @@ from .base import BaseSettings
 
 
 
-class DevSettings(BaseSettings):
+class LocalSettings(BaseSettings):
     DEBUG = True
