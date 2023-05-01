@@ -16,7 +16,6 @@ class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
     class Meta:
         table = 'auth_account'
         ordering = ['username']
-        
     
     def __repr__(self):
         return self.username

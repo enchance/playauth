@@ -17,6 +17,7 @@ fastapi-users-tortoise = "^0.2.0"
 aerich = "^0.7.1"
 python-decouple = "^3.8"
 limeutils = "^0.2.12"
+fastapi-users = "^11.0.0"
 
 
 
