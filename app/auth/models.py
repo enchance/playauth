@@ -11,22 +11,14 @@ class DTMixin(object):
 
 
 class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
-    # account_email = None
-    # user = None
-    #
     display = fields.CharField(max_length=199)
-    email: str = fields.CharField(max_length=255, unique=True)
-    # hashed_password = fields.CharField(max_length=199)
-    # is_active = fields.BooleanField(default=True, null=False)
-    # is_superuser = fields.BooleanField(default=False, null=False)
-    # is_verified = fields.BooleanField(default=False, null=False)
     
-    # OAuth
-    oauth_id: str = fields.CharField(null=True, max_length=255)
-    oauth_name: str = fields.CharField(null=True, max_length=100)
-    access_token: str = fields.CharField(null=True, max_length=1024)
-    refresh_token: str = fields.CharField(null=True, max_length=1024)
-    expires_at: int = fields.IntField(null=True)
+    # # OAuth
+    # oauth_id: str = fields.CharField(null=True, max_length=255)
+    # oauth_name: str = fields.CharField(null=True, max_length=100)
+    # access_token: str = fields.CharField(null=True, max_length=1024)
+    # refresh_token: str = fields.CharField(null=True, max_length=1024)
+    # expires_at: int = fields.IntField(null=True)
     
     class Meta:
         table = 'auth_account'

@@ -6,3 +6,6 @@ class BaseSettings:
     TIMEZONE = 'UTC'
     USE_TZ = True
     
+    # Account
+    DISPLAY_MAX = 4
+    
