@@ -8,4 +8,5 @@ class BaseSettings:
     
     # Account
     DISPLAY_MAX = 4
+    PASSWORD_MIN = 12
     
