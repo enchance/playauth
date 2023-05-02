@@ -1,10 +1,16 @@
 from uuid import UUID
-from tortoise import fields
+from datetime import datetime
+from tortoise import fields, models
 from limeutils import modstr
 from fastapi_users_tortoise import TortoiseBaseUserAccountModelUUID, TortoiseUserDatabase
 
 
-class DTMixin(object):
+
+HASH_FIELD = fields.CharField(max_length=70)
+HASH_FIELD_INDEXED = fields.CharField(max_length=70, index=True)
+
+
+class DTMixin:
     updated_at = fields.DatetimeField(auto_now=True)
     created_at = fields.DatetimeField(auto_now_add=True)
     deleted_at = fields.DatetimeField(null=True, index=True)
@@ -30,3 +36,17 @@ class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
 
 async def get_user_db():
     yield TortoiseUserDatabase(Account)
+
+
+class Token(models.Model):
+    token = HASH_FIELD_INDEXED
+    expires_at = fields.DatetimeField()
+    created_at = fields.DatetimeField(auto_now_add=True)
+    
+    account = fields.ForeignKeyField('models.Account', related_name='account_token')
+    
+    class Meta:
+        table = 'auth_token'
+    
+    def __repr__(self):
+        return modstr(self, 'token')
