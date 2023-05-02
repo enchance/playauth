@@ -1,9 +1,10 @@
 from typing import Annotated, Any
-from fastapi import FastAPI, Body, Depends
+from fastapi import FastAPI, Body, Depends, Response, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import settings as s, register_db, Env
-from app.auth import Account, AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user
+from app import settings as s, register_db, Env, ic
+from app.auth import Account, AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport,\
+    get_jwt_strategy
 
 
 def get_app() -> FastAPI:
@@ -51,3 +52,13 @@ async def update(email: Annotated[str, Body()], username: Annotated[str, Body()]
 @app.get('/private', response_model=AccountRes)
 def private(account: Account = Depends(current_user)):
     return account
+
+
+@app.post("/auth/jwt/refresh")
+async def refresh_jwt(user=Depends(current_user)):
+    token = await get_jwt_strategy().write_token(user)
+    # TODO: Check refresh token in redis to see if it's still valid
+    refresh_valid = True
+    if not refresh_valid:
+        raise HTTPException(status_code=401,  detail='Invalid token')
+    return await bearer_transport.get_login_response(token)
