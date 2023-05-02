@@ -1,17 +1,14 @@
 import uuid
+from datetime import datetime
 from typing import Optional
-from pydantic import Field, validator
-from fastapi_users import schemas
+from pydantic import Field, validator, BaseModel, EmailStr
+from fastapi_users import schemas, models
 
 from app import settings as s
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
-    """
-    Data you want visible in the current_user dependency. Each must have a value or default or
-    the sky will fall on your head, you'll go blind, and you'll get a girlfriend.
-    """
-    display: str
+    pass
 
 
 class UserCreate(schemas.BaseUserCreate):
@@ -27,10 +24,18 @@ class UserCreate(schemas.BaseUserCreate):
     
     @validator('password2')
     def same_password(cls, val: str, values: dict):
-        if 'password' in values and val != values['password']:
+        if 'password' not in values:
+            raise ValueError('Missing retyped password')
+        if val != values['password']:
             raise ValueError('Passwords do not match')
         return val
 
 
 class UserUpdate(schemas.BaseUserUpdate):
     display: Optional[str] = Field(None, max_length=s.DISPLAY_MAX)
+
+
+class AccountRes(BaseModel):
+    id: uuid.UUID
+    display: str
+    email: str

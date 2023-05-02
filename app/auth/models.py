@@ -1,7 +1,7 @@
 from uuid import UUID
 from tortoise import fields
 from limeutils import modstr
-from fastapi_users_tortoise import TortoiseBaseUserAccountModelUUID, TortoiseBaseUserOAuthAccountModelUUID
+from fastapi_users_tortoise import TortoiseBaseUserAccountModelUUID, TortoiseUserDatabase
 
 
 class DTMixin(object):
@@ -26,3 +26,7 @@ class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
     
     def __repr__(self):
         return self.display
+
+
+async def get_user_db():
+    yield TortoiseUserDatabase(Account)

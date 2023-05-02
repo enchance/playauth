@@ -6,7 +6,7 @@ from decouple import config
 
 
 
-DATABASE_URL = config('POSTGRES_DEV_URL', cast=str)
+DATABASE_URL = config('DATABASE_URL')
 DATABASE_MODELS = [
     'aerich.models',
     'app.auth.models',
