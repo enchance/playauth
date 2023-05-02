@@ -6,6 +6,7 @@ class BaseSettings:
     ENV = config('ENV')
     TIMEZONE = 'UTC'
     USE_TZ = True
+    SITEURL = 'http://localhost:9000'
     
     # Account
     DISPLAY_MAX = 4

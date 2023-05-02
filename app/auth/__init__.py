@@ -1,6 +1,7 @@
-import uuid
+import uuid, secrets, pytz
+from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import Request, Depends
+from fastapi import Request, Depends, Response
 from fastapi_users import UUIDIDMixin, BaseUserManager, FastAPIUsers
 from fastapi_users.authentication import (
     JWTStrategy, BearerTransport, AuthenticationBackend
@@ -17,6 +18,8 @@ TOKEN_AUD = f'{s.APPCODE}:auth'
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
+    refresh_cookie_key = 'refresh_token'
+    
     verification_token_secret = s.SECRET_KEY
     verification_token_lifetime_seconds = s.VERIFY_TOKEN_TTL
     verification_token_audience = VERIFY_TOKEN_AUD
@@ -24,6 +27,26 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     reset_password_token_secret = s.SECRET_KEY
     reset_password_token_lifetime_seconds = s.RESET_PASSWORD_TOKEN_TTL
     reset_password_token_audience = RESET_PASSWORD_TOKEN_AUD
+    
+    async def on_after_login(self, user: Account, request: Optional[Request] = None,
+                             response: Optional[Response] = None):
+        # TODO: Get current refresh_token
+        # If there is one, check expires then return it
+        # If none then generate a new one
+        # Save to db
+        
+        refresh_token = secrets.token_hex(nbytes=32)
+        # ic(refresh_token)
+        cookie_data = {
+            'key': self.refresh_cookie_key,
+            'value': refresh_token,
+            'httponly': True,
+            'expires': s.REFRESH_TOKEN_TTL,
+            'path': '/auth/refresh_token/refresh',
+            'domain': s.SITEURL,
+        }
+        response.set_cookie(**cookie_data)
+        ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
 
     # async def on_after_register(self, user: Account, request: Optional[Request] = None):
     #     ic(f"User {user.id} has registered.")

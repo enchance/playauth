@@ -1,5 +1,7 @@
+import secrets, pytz
 from typing import Annotated, Any
-from fastapi import FastAPI, Body, Depends, Response, Header, HTTPException
+from datetime import datetime, timedelta
+from fastapi import FastAPI, Body, Depends, Response, Header, HTTPException, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import settings as s, register_db, Env, ic
@@ -54,11 +56,23 @@ def private(account: Account = Depends(current_user)):
     return account
 
 
-@app.post("/auth/jwt/refresh")
-async def refresh_jwt(user=Depends(current_user)):
+@app.get("/auth/access_token/refresh")
+async def refresh_jwt(response: Response, refresh_token: Annotated[str, Cookie()],
+                      user=Depends(current_user)):
+    # https://github.com/fastapi-users/fastapi-users/discussions/350
+    # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
+    
     token = await get_jwt_strategy().write_token(user)
+    
     # TODO: Check refresh token in redis to see if it's still valid
     refresh_valid = True
+    
     if not refresh_valid:
         raise HTTPException(status_code=401,  detail='Invalid token')
+    
     return await bearer_transport.get_login_response(token)
+
+
+@app.get("/auth/refresh_token/refresh")
+async def refresh_jwt(refresh_token: Annotated[str, Cookie()]):
+    return refresh_token
