@@ -10,4 +10,5 @@ class LocalSettings(BaseSettings):
     PASSWORD_MIN = 4
     
     # Authentication
-    # ACCESS_TOKEN_TTL = 60 * 5
+    ACCESS_TOKEN_TTL = 60 * 60 * 24
+    # ACCESS_TOKEN_TTL = 1

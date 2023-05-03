@@ -42,11 +42,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
             'value': refresh_token,
             'httponly': True,
             'expires': s.REFRESH_TOKEN_TTL,
-            'path': '/auth/refresh_token/refresh',
+            'path': '/auth',
             'domain': s.SITEURL,
         }
         response.set_cookie(**cookie_data)
-        ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
+        # ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
 
     # async def on_after_register(self, user: Account, request: Optional[Request] = None):
     #     ic(f"User {user.id} has registered.")
@@ -67,7 +67,7 @@ def get_jwt_strategy() -> JWTStrategy:
 
 
 # Transport, Backend, Route
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
+bearer_transport = BearerTransport(tokenUrl="auth/login")
 auth_backend = AuthenticationBackend(name="jwt",transport=bearer_transport, get_strategy=get_jwt_strategy)
 fusers = FastAPIUsers[Account, uuid.UUID](get_user_manager, [auth_backend])
 
