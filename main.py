@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import settings as s, register_db, Env, ic
 from app.auth import Account, AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport, \
-    get_jwt_strategy
+    get_jwt_strategy, expiry_diff_minutes, fetch_cached_reftoken, refresh_cookie_generator
 
 
 def get_app() -> FastAPI:
@@ -56,48 +56,6 @@ app = get_app()
 @app.get('/private', response_model=AccountRes)
 def private(account: Account = Depends(current_user)):
     return account
-
-
-def expiry_diff_minutes(expiresiso: str) -> int:
-    """
-    Returns the difference in minutes.
-    :param expiresiso:  str, Data is assumed to be in datetime.isoformat() hence a str.
-    :return:            int
-    """
-    now = datetime.now(tz=pytz.UTC)
-    try:
-        expiresdt = datetime.fromisoformat(expiresiso)
-        diff_in_mins = math.floor((expiresdt - now).total_seconds() / 60)
-        return diff_in_mins
-    except TypeError:
-        return 0
-
-
-async def fetch_cached_reftoken(token: str) -> str | None:
-    """
-    Get the reftoken from cache. If there is no token then return None.
-    :param token:   refresh_token to search for
-    :return:        str | None
-    """
-    # // TODO: Get from cache
-    # Sample expiresiso
-    expiresiso = datetime.now(tz=pytz.UTC).isoformat()
-    # expiresiso = None
-    return expiresiso
-
-
-def refresh_cookie_generator(**kwargs) -> dict:
-    """Generate the data for a new cookie but not the cookie itself."""
-    refresh_token = secrets.token_hex(nbytes=32)
-    return {
-        'key':      'refresh_token',
-        'value':    refresh_token,
-        'httponly': True,
-        'expires':  s.REFRESH_TOKEN_TTL,
-        'path':     '/auth',
-        'domain':   s.SITEURL,
-        **kwargs,
-    }
 
 
 @app.get("/auth/jwt/refresh")

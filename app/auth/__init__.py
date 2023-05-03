@@ -1,4 +1,4 @@
-import uuid, secrets, pytz
+import uuid, secrets, pytz, math
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Request, Depends, Response
@@ -17,6 +17,46 @@ VERIFY_TOKEN_AUD = f'{s.APPCODE}:verify'
 TOKEN_AUD = f'{s.APPCODE}:auth'
 
 
+def expiry_diff_minutes(expiresiso: str) -> int:
+    """
+    Returns the difference in minutes.
+    :param expiresiso:  str, Data is assumed to be in datetime.isoformat() hence a str.
+    :return:            int
+    """
+    now = datetime.now(tz=pytz.UTC)
+    try:
+        expiresdt = datetime.fromisoformat(expiresiso)
+        diff_in_mins = math.floor((expiresdt - now).total_seconds() / 60)
+        return diff_in_mins
+    except TypeError:
+        return 0
+
+async def fetch_cached_reftoken(token: str) -> str | None:
+    """
+    Get the reftoken from cache. If there is no token then return None.
+    :param token:   refresh_token to search for
+    :return:        str | None
+    """
+    # // TODO: Get from cache
+    # Sample expiresiso
+    expiresiso = datetime.now(tz=pytz.UTC).isoformat()
+    # expiresiso = None
+    return expiresiso
+
+def refresh_cookie_generator(**kwargs) -> dict:
+    """Generate the data for a new cookie but not the cookie itself."""
+    refresh_token = secrets.token_hex(nbytes=32)
+    return {
+        'key':      'refresh_token',
+        'value':    refresh_token,
+        'httponly': True,
+        'expires':  s.REFRESH_TOKEN_TTL,
+        'path':     '/auth',
+        'domain':   s.SITEURL,
+        **kwargs,
+    }
+
+
 class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     refresh_cookie_key = 'refresh_token'
     
@@ -30,22 +70,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     
     async def on_after_login(self, user: Account, request: Optional[Request] = None,
                              response: Optional[Response] = None):
-        # TODO: Get current refresh_token
-        # If there is one, check expires then return it
-        # If none then generate a new one
-        # Save to db
-        
-        refresh_token = secrets.token_hex(nbytes=32)
-        # ic(refresh_token)
-        cookie_data = {
-            'key': self.refresh_cookie_key,
-            'value': refresh_token,
-            'httponly': True,
-            'expires': s.REFRESH_TOKEN_TTL,
-            'path': '/auth',
-            'domain': s.SITEURL,
-        }
-        response.set_cookie(**cookie_data)
+        # Always generate a new refresh_token on login
+        cookie = refresh_cookie_generator()
+        # // TODO: Save token, expiry to cache
+        response.set_cookie(**cookie)
         # ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
 
     # async def on_after_register(self, user: Account, request: Optional[Request] = None):
