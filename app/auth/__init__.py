@@ -38,8 +38,8 @@ async def fetch_cached_reftoken(token: str) -> str | None:
     :return:        str | None
     """
     # // TODO: Get from cache
-    # Sample expiresiso
-    expiresiso = datetime.now(tz=pytz.UTC).isoformat()
+    # Sample expiresiso from redis
+    expiresiso = (datetime.now(tz=pytz.UTC) + timedelta(days=1)).isoformat()
     # expiresiso = None
     return expiresiso
 
@@ -58,8 +58,6 @@ def refresh_cookie_generator(**kwargs) -> dict:
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
-    refresh_cookie_key = 'refresh_token'
-    
     verification_token_secret = s.SECRET_KEY
     verification_token_lifetime_seconds = s.VERIFY_TOKEN_TTL
     verification_token_audience = VERIFY_TOKEN_AUD
@@ -88,7 +86,6 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
 
 async def get_user_manager(user_db: TortoiseUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
-
 
 def get_jwt_strategy() -> JWTStrategy:
     return JWTStrategy(secret=s.SECRET_KEY, lifetime_seconds=s.ACCESS_TOKEN_TTL, token_audience=[TOKEN_AUD])

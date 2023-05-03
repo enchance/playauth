@@ -63,7 +63,7 @@ async def refresh_acstoken(resp: Response, strategy: Annotated[JWTStrategy, Depe
                            refresh_token: Annotated[str, Cookie()] = None, user=Depends(current_user)):
     # https://github.com/fastapi-users/fastapi-users/discussions/350
     # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
-    
+
     # // TODO: Create a new reftoken with the same expiry and respond with that
     try:
         if cached_reftoken := await fetch_cached_reftoken(refresh_token):
@@ -84,8 +84,3 @@ async def refresh_acstoken(resp: Response, strategy: Annotated[JWTStrategy, Depe
     return await bearer_transport.get_login_response(token)
     
     # return await auth_backend.login(strategy, user)
-
-# @app.get("/auth/refresh/refresh")
-# async def refresh_reftoken(refresh_token: Annotated[str, Cookie()]):
-
-#     return True
