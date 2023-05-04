@@ -7,7 +7,7 @@ from fastapi_users_tortoise import TortoiseBaseUserAccountModelUUID, TortoiseUse
 
 
 HASH_FIELD = fields.CharField(max_length=70)
-HASH_FIELD_INDEXED = fields.CharField(max_length=70, index=True)
+HASH_FIELD_INDEXED = fields.CharField(max_length=70, unique=True)
 
 
 class DTMixin:
@@ -31,22 +31,22 @@ class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
         ordering = ['display', 'email']
     
     def __repr__(self):
-        return self.display
+        return modstr(self, 'display', 'email')
 
 
 async def get_user_db():
     yield TortoiseUserDatabase(Account)
 
 
-class Token(models.Model):
-    token = HASH_FIELD_INDEXED
-    expires_at = fields.DatetimeField()
-    created_at = fields.DatetimeField(auto_now_add=True)
-    
-    account = fields.ForeignKeyField('models.Account', related_name='account_token')
-    
-    class Meta:
-        table = 'auth_token'
-    
-    def __repr__(self):
-        return modstr(self, 'token')
+# class Token(models.Model):
+#     refresh_token = HASH_FIELD_INDEXED
+#     expires_at = fields.DatetimeField()
+#     created_at = fields.DatetimeField(auto_now_add=True)
+#
+#     account = fields.ForeignKeyField('models.Account', related_name='refresh_token')
+#
+#     class Meta:
+#         table = 'auth_token'
+#
+#     def __repr__(self):
+#         return modstr(self, 'token')
