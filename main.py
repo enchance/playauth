@@ -16,7 +16,7 @@ def get_app() -> FastAPI:
     
     # Routes
     app_.include_router(fusers.get_register_router(UserRead, UserCreate), prefix='/auth')
-    app_.include_router(fusers.get_auth_router(auth_backend), prefix="/auth")
+    app_.include_router(fusers.get_auth_router(auth_backend), prefix='/auth')
     
     # Tortoise
     register_db(app_)
@@ -58,7 +58,7 @@ def private(account: Account = Depends(current_user)):
     return account
 
 
-@app.get("/auth/jwt/refresh")
+@app.get(f"{s.JWT_AUTH_PREFIX}/refresh")
 async def refresh_acstoken(resp: Response, strategy: Annotated[JWTStrategy, Depends(get_jwt_strategy)],
                            refresh_token: Annotated[str, Cookie()] = None, user=Depends(current_user)):
     # https://github.com/fastapi-users/fastapi-users/discussions/350

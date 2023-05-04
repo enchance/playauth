@@ -51,7 +51,7 @@ def refresh_cookie_generator(**kwargs) -> dict:
         'value':    refresh_token,
         'httponly': True,
         'expires':  s.REFRESH_TOKEN_TTL,
-        'path':     '/auth',
+        'path':     s.JWT_AUTH_PREFIX,
         'domain':   s.SITEURL,
         **kwargs,
     }
