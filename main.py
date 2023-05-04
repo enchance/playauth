@@ -43,7 +43,7 @@ def private(account: Account = Depends(current_user)):
     return account
 
 
-@app.get(f"{s.JWT_AUTH_PREFIX}/refresh")
+@app.post(f"{s.JWT_AUTH_PREFIX}/refresh")
 async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_strategy)],
                                refresh_token: Annotated[str, Cookie()] = None, user=Depends(current_user)):
     """

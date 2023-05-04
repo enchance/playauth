@@ -87,19 +87,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     async def on_after_login(self, user: Account, request: Optional[Request] = None,
                              response: Optional[Response] = None):
         # Always generate a new refresh_token on login
-        cookie = refresh_cookie_generator()
-        # // TODO: Save token, expiry to cache
-        response.set_cookie(**cookie)
+        cookiedata = refresh_cookie_generator()
+        cachedata = cookiedata.pop('cachedata')
+        # // TODO: Save cachedata to cache
+        response.set_cookie(**cookiedata)
         # ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
-
-    # async def on_after_register(self, user: Account, request: Optional[Request] = None):
-    #     ic(f"User {user.id} has registered.")
-    #
-    # async def on_after_forgot_password(self, user: Account, token: str, request: Optional[Request] = None):
-    #     ic(f"User {user.id} has forgot their password. Reset token: {token}")
-    #
-    # async def on_after_request_verify(self, user: Account, token: str, request: Optional[Request] = None):
-    #     ic(f"Verification requested for user {user.id}. Verification token: {token}")
 
 
 async def get_user_manager(user_db: TortoiseUserDatabase = Depends(get_user_db)):
