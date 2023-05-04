@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import settings as s, register_db, Env, ic
 from app.auth import Account, AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport, \
-    get_jwt_strategy, expiry_diff_minutes, fetch_cached_reftoken, refresh_cookie_generator
+    get_jwt_strategy, AuthHelper
 
 
 def get_app() -> FastAPI:
@@ -58,16 +58,16 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
 
     try:
-        if cached_expiresiso := await fetch_cached_reftoken(refresh_token):
-            diff = expiry_diff_minutes(cached_expiresiso)
+        if cached_expiresiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
+            diff = AuthHelper.expiry_diff_minutes(cached_expiresiso)
             ic(f'DIFF: {diff}')
             if diff <= 0:
                 # // TODO: Delete any existing refresh_tokens in cache
-                raise Exception()                                                       # Logout
+                raise Exception()                                                                   # Logout
             if diff <= s.REFRESH_TOKEN_REGENERATE / 60:
-                cookiedata = refresh_cookie_generator()                                 # Regenerate
+                cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate
             else:
-                cookiedata = refresh_cookie_generator(expiresiso=cached_expiresiso)     # Retain
+                cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=cached_expiresiso)      # Retain
         else:
             raise Exception()
     except Exception:
