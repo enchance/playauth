@@ -47,8 +47,9 @@ def private(account: Account = Depends(current_user)):
 async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_strategy)],
                                refresh_token: Annotated[str, Cookie()] = None, user=Depends(current_user)):
     """
-    Generates a new access_token if the refresh_token is still fresh. A missing refresh_token would warrant the
-    user to login in again.
+    Generates a new access_token if the refresh_token is still fresh.
+    A missing refresh_token would warrant the user to login again.
+    Refresh toknes are always regenerated but the expires date may remain the same.
     :param strategy:        JWT strat
     :param refresh_token:   Current refresh_token
     :param user:            Account
@@ -67,9 +68,9 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
                 # // TODO: Delete any existing refresh_tokens in cache
                 raise Exception()                                                                   # Logout
             if diff <= s.REFRESH_TOKEN_REGENERATE / 60:
-                cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate
+                cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate expires
             else:
-                cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=cached_expiresiso)      # Retain
+                cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=cached_expiresiso)      # Retain expires
         else:
             raise Exception()
     except Exception:
