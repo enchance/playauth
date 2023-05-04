@@ -11,4 +11,5 @@ class LocalSettings(BaseSettings):
     
     # Authentication
     ACCESS_TOKEN_TTL = 60 * 60 * 24
+    # ACCESS_TOKEN_TTL = 60 * 30
     # ACCESS_TOKEN_TTL = 1

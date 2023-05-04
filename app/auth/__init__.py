@@ -1,4 +1,4 @@
-import uuid, secrets, pytz, math
+import uuid, secrets, pytz, math, time
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Request, Depends, Response
@@ -17,6 +17,11 @@ VERIFY_TOKEN_AUD = f'{s.APPCODE}:verify'
 TOKEN_AUD = f'{s.APPCODE}:auth'
 
 
+
+def format_expiresiso(expiresiso: str) -> str:
+    expiry = datetime.fromisoformat(expiresiso).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    return expiry
+
 def expiry_diff_minutes(expiresiso: str) -> int:
     """
     Returns the difference in minutes.
@@ -29,6 +34,7 @@ def expiry_diff_minutes(expiresiso: str) -> int:
         diff_in_mins = math.floor((expiresdt - now).total_seconds() / 60)
         return diff_in_mins
     except TypeError:
+        ic('CCC')
         return 0
 
 async def fetch_cached_reftoken(token: str) -> str | None:
@@ -37,25 +43,37 @@ async def fetch_cached_reftoken(token: str) -> str | None:
     :param token:   refresh_token to search for
     :return:        str | None
     """
-    # // TODO: Get from cache
-    # Sample expiresiso from redis
-    expiresiso = (datetime.now(tz=pytz.UTC) + timedelta(days=1)).isoformat()
+    # // TODO: Get iso from cache
+    expiresiso = '2023-05-04T11:00:00.906700+00:00'
     # expiresiso = None
     return expiresiso
 
-def refresh_cookie_generator(**kwargs) -> dict:
+def refresh_cookie_generator(*, expiresiso: Optional[str] = None, **kwargs) -> dict:
     """Generate the data for a new cookie but not the cookie itself."""
     refresh_token = secrets.token_hex(nbytes=32)
+    fallback_iso = (datetime.now(tz=pytz.UTC) + timedelta(seconds=s.REFRESH_TOKEN_TTL)).isoformat()
+    
+    cachedata = dict(token=refresh_token, expiresiso=fallback_iso)
+    expires = format_expiresiso(fallback_iso)
+    try:
+        if expiresiso:
+            if expires := format_expiresiso(expiresiso):
+                cachedata['expiresiso'] = expiresiso
+            else:
+                raise ValueError()
+    except (TypeError, ValueError):
+        pass
+        
     return {
         'key':      'refresh_token',
         'value':    refresh_token,
         'httponly': True,
-        'expires':  s.REFRESH_TOKEN_TTL,
+        'expires':  expires,
         'path':     s.JWT_AUTH_PREFIX,
         'domain':   s.SITEURL,
+        'cachedata': cachedata,
         **kwargs,
     }
-
 
 class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     verification_token_secret = s.SECRET_KEY
