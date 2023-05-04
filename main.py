@@ -49,16 +49,18 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     """
     Generates a new access_token if the refresh_token is still fresh. A missing refresh_token would warrant the
     user to login in again.
-    :param strategy:
-    :param refresh_token:
-    :param user:
-    :return:
+    :param strategy:        JWT strat
+    :param refresh_token:   Current refresh_token
+    :param user:            Account
+    :return:                str, New access_token
     """
     # https://github.com/fastapi-users/fastapi-users/discussions/350
     # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
 
     try:
-        if cached_expiresiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
+        if refresh_token is None:
+            raise Exception()
+        elif cached_expiresiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
             diff = AuthHelper.expiry_diff_minutes(cached_expiresiso)
             ic(f'DIFF: {diff}')
             if diff <= 0:
