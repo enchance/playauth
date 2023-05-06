@@ -9,8 +9,8 @@ from fastapi_users.authentication.transport.bearer import BearerResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import settings as s, register_db, Env, ic
-from app.auth import Account, AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport, \
-    get_jwt_strategy, AuthHelper
+from app.auth import AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport, \
+    get_jwt_strategy, AuthHelper, Account
 from fixtures import fixture_router
 
 
@@ -45,6 +45,8 @@ app = get_app()
 
 @app.get('/private', response_model=AccountRes)
 def private(account: Account = Depends(current_user)):
+    ic(type(account))
+    ic(account.get_options())
     return account
 
 
@@ -95,3 +97,8 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     
     # return await bearer_transport.get_login_response(token)
     # return await auth_backend.login(strategy, user)
+
+
+# @app.get('/foo')
+# async def foo(user: Annotated[Account, Depends(current_user)]):
+#     return user.options

@@ -22,3 +22,14 @@ class BaseSettings:
     
     # Routes
     JWT_AUTH_PREFIX = '/auth/jwt'
+
+    # Defaults
+    ACCOUNT_OPTIONS: dict = {
+        # Update CacheAccountToRedis if you update this
+        'timezone': '+0000',
+        'lang': 'en-us',
+        'fiat': 'USD',
+        'theme': 'base-theme',
+        'date_format': '%Y-%m-%d %H:%M:%S',
+        'limit_count': 10,
+    }

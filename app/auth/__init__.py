@@ -9,6 +9,7 @@ from fastapi_users.authentication import (
 )
 
 from app import settings as s, ic
+# from .models import *
 from .models import *
 from .schemas import *
 

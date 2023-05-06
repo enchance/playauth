@@ -42,3 +42,4 @@ class AccountRes(BaseModel):
     id: uuid.UUID
     display: str
     email: str
+    is_banned: bool
