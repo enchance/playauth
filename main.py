@@ -58,7 +58,7 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
 
     try:
-        if refresh_token is None:
+        if not s.DEBUG and refresh_token is None:
             raise Exception()
         if cached_expiresiso := await fetch_cached_reftoken(refresh_token):
             diff = expiry_diff_minutes(cached_expiresiso)
