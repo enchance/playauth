@@ -19,8 +19,12 @@ TOKEN_AUD = f'{s.APPCODE}:auth'
 
 
 def format_expiresiso(expiresiso: str) -> str:
-    expiry = datetime.fromisoformat(expiresiso).strftime("%a, %d %b %Y %H:%M:%S GMT")
-    return expiry
+    """Convert a datetime in isoformat to the format used in cookies."""
+    try:
+        expiry = datetime.fromisoformat(expiresiso).strftime("%a, %d %b %Y %H:%M:%S GMT")
+        return expiry
+    except (TypeError, ValueError) as err:
+        raise
 
 def expiry_diff_minutes(expiresiso: str) -> int:
     """
@@ -34,18 +38,18 @@ def expiry_diff_minutes(expiresiso: str) -> int:
         diff_in_mins = math.floor((expiresdt - now).total_seconds() / 60)
         return diff_in_mins
     except TypeError:
-        ic('CCC')
         return 0
 
-async def fetch_cached_reftoken(token: str) -> str | None:
+async def fetch_cached_reftoken(refresh_token: str) -> str | None:
     """
-    Get the reftoken from cache. If there is no token then return None.
-    :param token:   refresh_token to search for
-    :return:        str | None
+    Get the refresh_token from cache. If there is no token then return None.
+    :param refresh_token:   refresh_token to search for
+    :return:                datetime in iso format, None
     """
-    # // TODO: Get iso from cache
-    expiresiso = '2023-05-04T11:00:00.906700+00:00'
+    # // TODO: Get iso from cache/db
     # expiresiso = None
+    # Sample data from cache saved as string
+    expiresiso = (datetime.now(tz=pytz.UTC) + timedelta(days=7)).isoformat()
     return expiresiso
 
 def refresh_cookie_generator(*, expiresiso: Optional[str] = None, **kwargs) -> dict:
@@ -71,7 +75,7 @@ def refresh_cookie_generator(*, expiresiso: Optional[str] = None, **kwargs) -> d
         'expires':  expires,
         'path':     s.JWT_AUTH_PREFIX,
         'domain':   s.SITEURL,
-        'cachedata': cachedata,
+        'cachedata': cachedata,             # Pop this data later
         **kwargs,
     }
 
@@ -89,7 +93,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
         # Always generate a new refresh_token on login
         cookiedata = refresh_cookie_generator()
         cachedata = cookiedata.pop('cachedata')
-        # // TODO: Save cachedata to cache
+        # // TODO: Save cachedata to cache/db
         response.set_cookie(**cookiedata)
         # ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
 
@@ -106,6 +110,6 @@ bearer_transport = BearerTransport(tokenUrl="auth/login")
 auth_backend = AuthenticationBackend(name="jwt",transport=bearer_transport, get_strategy=get_jwt_strategy)
 fusers = FastAPIUsers[Account, uuid.UUID](get_user_manager, [auth_backend])
 
-# Helpers
+# Dependency injection
 current_user = fusers.current_user(active=True, verified=True)
 super_user = fusers.current_user(active=True, verified=True, superuser=True)

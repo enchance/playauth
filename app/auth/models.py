@@ -6,10 +6,6 @@ from fastapi_users_tortoise import TortoiseBaseUserAccountModelUUID, TortoiseUse
 
 
 
-HASH_FIELD = fields.CharField(max_length=70)
-HASH_FIELD_INDEXED = fields.CharField(max_length=70, index=True)
-
-
 class DTMixin:
     updated_at = fields.DatetimeField(auto_now=True)
     created_at = fields.DatetimeField(auto_now_add=True)
@@ -19,7 +15,7 @@ class DTMixin:
 class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
     display = fields.CharField(max_length=199)
     
-    # # OAuth
+    # # OAuth: not needed here but good to have
     # oauth_id: str = fields.CharField(null=True, max_length=255)
     # oauth_name: str = fields.CharField(null=True, max_length=100)
     # access_token: str = fields.CharField(null=True, max_length=1024)
