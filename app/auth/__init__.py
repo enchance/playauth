@@ -37,7 +37,6 @@ class AuthHelper:
             diff_in_mins = math.floor((expiresdt - now).total_seconds() / 60)
             return diff_in_mins
         except TypeError:
-            ic('CCC')
             return 0
     
     @staticmethod
@@ -48,8 +47,8 @@ class AuthHelper:
         :return:        str | None
         """
         # // TODO: Get iso from cache
-        # expiresiso = '2023-05-04T11:00:00.906700+00:00'
-        expiresiso = (datetime.now(tz=pytz.UTC) + timedelta(minutes=182)).isoformat()
+        expiresiso = '2023-05-06T10:47:00.906700+00:00'
+        # expiresiso = (datetime.now(tz=pytz.UTC) + timedelta(minutes=182)).isoformat()
         # expiresiso = None
         return expiresiso
     

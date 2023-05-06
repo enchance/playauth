@@ -36,17 +36,3 @@ class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
 
 async def get_user_db():
     yield TortoiseUserDatabase(Account)
-
-
-# class Token(models.Model):
-#     refresh_token = HASH_FIELD_INDEXED
-#     expires_at = fields.DatetimeField()
-#     created_at = fields.DatetimeField(auto_now_add=True)
-#
-#     account = fields.ForeignKeyField('models.Account', related_name='refresh_token')
-#
-#     class Meta:
-#         table = 'auth_token'
-#
-#     def __repr__(self):
-#         return modstr(self, 'token')

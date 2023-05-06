@@ -61,15 +61,18 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     try:
         if refresh_token is None:
             raise Exception()
-        elif cached_expiresiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
+        
+        if cached_expiresiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
             diff = AuthHelper.expiry_diff_minutes(cached_expiresiso)
-            ic(f'DIFF: {diff}')
             if diff <= 0:
                 # // TODO: Delete any existing refresh_tokens in cache
+                ic(f'LOGOUT ACCOUNT: {diff} mins')
                 raise Exception()                                                                   # Logout
             if diff <= s.REFRESH_TOKEN_REGENERATE / 60:
+                ic(f'FULL REGENERATION: {diff} mins')
                 cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate expires
             else:
+                ic(f'PARTIAL REGENERATION: {diff} mins')
                 cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=cached_expiresiso)      # Retain expires
         else:
             raise Exception()
