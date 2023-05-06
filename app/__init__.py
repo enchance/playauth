@@ -1,6 +1,6 @@
 from icecream import IceCreamDebugger
 
-from .schema import *
+from .schemas import *
 from .settings import settings
 from .db import register_db
 

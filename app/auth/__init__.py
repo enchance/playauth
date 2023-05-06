@@ -1,4 +1,5 @@
 import uuid, secrets, pytz, math, time
+from contextlib import  asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Request, Depends, Response
@@ -80,6 +81,13 @@ class AuthHelper:
             **kwargs,
         }
 
+    @staticmethod
+    async def create_user(**kwargs):
+        async with get_user_db_context() as user_db:
+            async with get_user_manager_context(user_db) as user_manager:
+                return await user_manager.create(UserCreate(**kwargs, display=''))
+
+
 class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     verification_token_secret = s.SECRET_KEY
     verification_token_lifetime_seconds = s.VERIFY_TOKEN_TTL
@@ -110,6 +118,10 @@ def get_jwt_strategy() -> JWTStrategy:
 bearer_transport = BearerTransport(tokenUrl="auth/login")
 auth_backend = AuthenticationBackend(name="jwt",transport=bearer_transport, get_strategy=get_jwt_strategy)
 fusers = FastAPIUsers[Account, uuid.UUID](get_user_manager, [auth_backend])
+
+# Context: used to programmatically create users for tests
+get_user_db_context = asynccontextmanager(get_user_db)
+get_user_manager_context = asynccontextmanager(get_user_manager)
 
 # Helpers
 current_user = fusers.current_user(active=True, verified=True)

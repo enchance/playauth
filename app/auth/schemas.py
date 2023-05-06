@@ -14,7 +14,7 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
 class UserCreate(schemas.BaseUserCreate):
     """Data needed to create a new account"""
     display: str = Field(..., max_length=s.DISPLAY_MAX)
-    password2: str
+    # password2: str
     
     @validator('password')
     def valid_password(cls, val: str):
@@ -22,13 +22,13 @@ class UserCreate(schemas.BaseUserCreate):
             raise ValueError(f'Password should be at least {s.PASSWORD_MIN} characters')
         return val
     
-    @validator('password2')
-    def same_password(cls, val: str, values: dict):
-        if 'password' not in values:
-            raise ValueError('Missing retyped password')
-        if val != values['password']:
-            raise ValueError('Passwords do not match')
-        return val
+    # @validator('password2')
+    # def same_password(cls, val: str, values: dict):
+    #     if 'password' not in values:
+    #         raise ValueError('Missing retyped password')
+    #     if val != values['password']:
+    #         raise ValueError('Passwords do not match')
+    #     return val
 
 
 class UserUpdate(schemas.BaseUserUpdate):
