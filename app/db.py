@@ -6,7 +6,7 @@ from decouple import config
 
 
 
-DATABASE_URL = config('DATABASE_URL')
+DATABASE_URL = config('DATABASE_URL_DEV')
 DATABASE_MODELS = [
     'aerich.models',
     'app.auth.models',

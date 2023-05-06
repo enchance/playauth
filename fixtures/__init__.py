@@ -4,9 +4,10 @@ from app import ic
 from app.auth import Account, AuthHelper
 
 
-fixturerouter = APIRouter()
 
-@fixturerouter.get('/init', summary='Initial data for the project')
+fixture_router = APIRouter()
+
+@fixture_router.get('/init', summary='Initial data for the project')
 async def init(accounts: bool = True) -> list[str]:
     success = []
     

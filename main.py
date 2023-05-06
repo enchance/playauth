@@ -11,19 +11,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import settings as s, register_db, Env, ic
 from app.auth import Account, AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport, \
     get_jwt_strategy, AuthHelper
-from fixtures import fixturerouter
+from fixtures import fixture_router
 
 
 def get_app() -> FastAPI:
     app_ = FastAPI()
     
     # Routes
-    app_.include_router(fusers.get_register_router(UserRead, UserCreate), prefix='/auth')
-    app_.include_router(fusers.get_auth_router(auth_backend), prefix='/auth')
+    app_.include_router(fusers.get_register_router(UserRead, UserCreate), prefix='/auth', tags=['auth'])
+    app_.include_router(fusers.get_auth_router(auth_backend), prefix='/auth', tags=['auth'])
     
     # Dev
     if s.ENV == Env.development:
-        app_.include_router(fixturerouter, prefix='/fixtures', tags=['fixtures'])
+        app_.include_router(fixture_router, prefix='/fixtures', tags=['fixtures'])
     
     # Tortoise
     register_db(app_)

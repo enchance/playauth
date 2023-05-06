@@ -18,12 +18,17 @@ aerich = "^0.7.1"
 python-decouple = "^3.8"
 limeutils = "^0.2.12"
 fastapi-users = "^11.0.0"
+pytest-asyncio = "^0.21.0"
 
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"
 pytest-sugar = "^0.9.7"
+pytest-asyncio = "^0.21.0"
+httpx = "^0.24.0"
+factory-boy = "^3.2.1"
+freezegun = "^1.2.2"
 
 [tool.aerich]
 tortoise_orm = "app.db.TORTOISE_ORM"
