@@ -45,11 +45,11 @@ app = get_app()
 
 @app.get('/private', response_model=AccountRes)
 async def private(account: Account = Depends(current_user)):
-    # ic(type(account))
-    # ic(account.get_options())
-    groups = await Group.all()
-    # ic(groups)
-    # ic(groups[0].foo())
+    ic(type(account))
+    ic(account.get_options())
+    group = await Group.get_or_none(name='AccountGroup').only('id', 'name')
+    ic(group)
+    ic(group.foo())
     return account
 
 

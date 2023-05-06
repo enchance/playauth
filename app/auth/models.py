@@ -13,10 +13,11 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         return self.options
     
     
-class Group(GroupMod):
+class Group(GroupMod, models.Model):
     class Meta:
         table = 'auth_group'
         ordering = ['name']
         
-    def foo(self) -> str:
+    @staticmethod
+    def foo() -> str:
         return 'bar'

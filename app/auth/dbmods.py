@@ -41,7 +41,7 @@ class AccountMod(DTMixin):
         return modstr(self, 'display', 'email')
     
     
-class GroupMod(models.Model):
+class GroupMod:
     name = f.CharField(max_length=20, unique=True)
     description = f.CharField(max_length=199)
     permissions = ArrayField('text', null=True)

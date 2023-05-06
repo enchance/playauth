@@ -11,9 +11,9 @@ fixture_router = APIRouter()
 async def init(accounts: bool = True, groups: bool = True) -> list[str]:
     success = []
     
-    if accounts:
-        success += await insert_accounts()
     if groups:
         success += await insert_groups()
+    if accounts:
+        success += await insert_accounts()
         
     return success

@@ -15,7 +15,15 @@ async def insert_accounts() -> list[str]:
     """Create nenw accounts for testing"""
     total = 0
     password = 'pass123'        # noqa
+    
     current_emails = await Account.all().values_list('email', flat=True)
+    grouplist = await Group.all().only('id', 'name')
+    
+    async def _add_default_groups(account_: Account):
+        for i in s.DEFAULT_GROUPS:
+            for grp in grouplist:
+                if grp.name == i:
+                    await account_.groups.add(grp)
     
     # Super users
     dataset = {SUPER_EMAIL}
@@ -23,15 +31,20 @@ async def insert_accounts() -> list[str]:
     createset = dataset - set(current_emails)
     if createset:
         for email in createset:
-            if _ := await AuthHelper.create_user(email=email, password=password, is_superuser=True,
-                                                 is_verified=True):
+            if account := await AuthHelper.create_user(email=email, password=password, is_superuser=True,
+                                                       is_verified=True):
+                await _add_default_groups(account)
+                if group := await Group.get_or_none(name='AdminGroup'):
+                    ic('ADDING EXTRA')
+                    await account.groups.add(group)
                 total += 1
     
     # Verified users
     createset = VERIFIED_EMAIL_SET - set(current_emails)
     if createset:
         for email in createset:
-            if _ := await AuthHelper.create_user(email=email, password=password, is_verified=True):
+            if account := await AuthHelper.create_user(email=email, password=password, is_verified=True):
+                await _add_default_groups(account)
                 total += 1
     
     # Unverified users
@@ -40,30 +53,34 @@ async def insert_accounts() -> list[str]:
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if _ := await AuthHelper.create_user(email=i, password=password):
+            if account := await AuthHelper.create_user(email=i, password=password):
+                await _add_default_groups(account)
                 total += 1
     
     dataset = {INACTIVE_VERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if _ := await AuthHelper.create_user(email=i, password=password,is_verified=True,
+            if account := await AuthHelper.create_user(email=i, password=password,is_verified=True,
                                                  is_active=False):
+                await _add_default_groups(account)
                 total += 1
     
     dataset = {INACTIVE_UNVERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if _ := await AuthHelper.create_user(email=i, password=password, is_active=False):
+            if account := await AuthHelper.create_user(email=i, password=password, is_active=False):
+                await _add_default_groups(account)
                 total += 1
     
     dataset = {BANNED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if _ := await AuthHelper.create_user(email=i, password=password, is_verified=True,
-                                                 is_banned=True):
+            if account := await AuthHelper.create_user(email=i, password=password, is_verified=True,
+                                                       is_banned=True):
+                await _add_default_groups(account)
                 total += 1
     
     return [f'ACCOUNTS_CREATED - {total} new']
@@ -71,25 +88,21 @@ async def insert_accounts() -> list[str]:
 
 async def insert_groups() -> list[str]:
     total = 0
-    accounts = await Account.all().only('id').prefetch_related('groups')
     grouplist = await Group.all().values_list('name', flat=True)
     
+    ll = []
     for name, datamap in GROUP_FIXTURES.items():
         if name in grouplist:
             continue
-        
-        desc = datamap.pop('description')
+            
         permlist = set()
+        desc = datamap.pop('description')
         for title, perms in datamap.items():
             for i in perms:
                 permlist.add(f'{title}.{i}')
-        
-        group = await Group.create(name=name, description=desc, permissions=permlist)
+        ll.append(Group(name=name, description=desc, permissions=permlist))
         total += 1
-        
-        # Add to account
-        if group.name in s.DEFAULT_GROUPS:
-            for account in accounts:
-                await account.groups.add(group)
+    ll and await Group.bulk_create(ll)
+    
     
     return [f'GROUPS_CREATED - {total} groups']
