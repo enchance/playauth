@@ -23,7 +23,17 @@ CREATE TABLE IF NOT EXISTS "auth_account" (
     "is_banned" BOOL NOT NULL  DEFAULT False
 );
 CREATE INDEX IF NOT EXISTS "idx_auth_accoun_deleted_112596" ON "auth_account" ("deleted_at");
-CREATE INDEX IF NOT EXISTS "idx_auth_accoun_email_3074e7" ON "auth_account" ("email");"""
+CREATE INDEX IF NOT EXISTS "idx_auth_accoun_email_3074e7" ON "auth_account" ("email");
+CREATE TABLE IF NOT EXISTS "auth_group" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" VARCHAR(20) NOT NULL UNIQUE,
+    "description" VARCHAR(199) NOT NULL,
+    "permissions" text[]
+);
+CREATE TABLE IF NOT EXISTS "auth_xaccountgroups" (
+    "account_id" UUID NOT NULL REFERENCES "auth_account" ("id") ON DELETE CASCADE,
+    "group_id" INT NOT NULL REFERENCES "auth_group" ("id") ON DELETE CASCADE
+);"""
 
 
 async def downgrade(db: BaseDBAsyncClient) -> str:
