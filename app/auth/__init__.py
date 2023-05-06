@@ -107,7 +107,9 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
         response.set_cookie(**cookiedata)
         # ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
 
-
+async def get_user_db():
+    yield TortoiseUserDatabase(Account)
+    
 async def get_user_manager(user_db: TortoiseUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 

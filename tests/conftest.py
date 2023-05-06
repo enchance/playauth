@@ -4,6 +4,7 @@ from tortoise import Tortoise, connections
 
 
 from main import get_app
+from app import ic
 from app.db import DATABASE_URL, DATABASE_MODELS
 from fixtures import init
 
@@ -37,6 +38,7 @@ def seed():
 
 @pytest.fixture(scope='session')
 async def initdb(seed):
+    # ic('INITIALIZING_DB')
     postgresurl = 'postgres://postgres:pass123@127.0.0.1:5432/postgres'
     dbname = 'playauth'
     

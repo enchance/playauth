@@ -17,17 +17,18 @@ class DTMixin:
     updated_at = f.DatetimeField(auto_now=True)
     created_at = f.DatetimeField(auto_now_add=True)
     deleted_at = f.DatetimeField(null=True, index=True)
+    deleted_by = f.ForeignKeyField('models.Account', null=True)
 
 
 class AccountMod(DTMixin):
     display = f.CharField(max_length=199)
     is_banned = f.BooleanField(default=False)
-    options = f.JSONField(default=s.ACCOUNT_OPTIONS)
+    options = f.JSONField(default=s.DEFAULT_ACCOUNT_OPTIONS)
     permissions = ArrayField('text', null=True)
 
-    # groups = f.ManyToManyField('models.Group', related_name='groupaccounts',
-    #                            through='auth_xaccountgroups',
-    #                            backward_key='account_id', forward_key='group_id')
+    groups = f.ManyToManyField('models.Group', related_name='groupaccounts',
+                               through='auth_xaccountgroups',
+                               backward_key='account_id', forward_key='group_id')
     
     # # OAuth
     # oauth_id: str = f.CharField(null=True, max_length=255)
@@ -40,14 +41,10 @@ class AccountMod(DTMixin):
         return modstr(self, 'display', 'email')
     
     
-# class GroupMod(models.Model):
-#     name = f.CharField(max_length=20, unique=True)
-#     description = f.CharField(max_length=199)
-#     permissions = ArrayField('text', null=True)
-#
-#     class Meta:
-#         table = 'auth_group'
-#         ordering = ['name']
-#
-#     def __repr__(self):
-#         return modstr(self, 'name')
+class GroupMod(models.Model):
+    name = f.CharField(max_length=20, unique=True)
+    description = f.CharField(max_length=199)
+    permissions = ArrayField('text', null=True)
+
+    def __repr__(self):
+        return modstr(self, 'name')

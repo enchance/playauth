@@ -1,6 +1,7 @@
+from tortoise import models
 from fastapi_users_tortoise import TortoiseUserDatabase, TortoiseBaseUserAccountModelUUID
 
-from .dbmod import AccountMod
+from .dbmods import AccountMod, GroupMod
 
 
 class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
@@ -9,8 +10,13 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         ordering = ['display', 'email']
         
     def get_options(self) -> dict:
-        return self.permissions
-
-
-async def get_user_db():
-    yield TortoiseUserDatabase(Account)
+        return self.options
+    
+    
+class Group(GroupMod):
+    class Meta:
+        table = 'auth_group'
+        ordering = ['name']
+        
+    def foo(self) -> str:
+        return 'bar'

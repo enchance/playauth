@@ -24,7 +24,8 @@ class BaseSettings:
     JWT_AUTH_PREFIX = '/auth/jwt'
 
     # Defaults
-    ACCOUNT_OPTIONS: dict = {
+    DEFAULT_GROUPS = ['AccountGroup', 'DemoGroup']
+    DEFAULT_ACCOUNT_OPTIONS: dict = {
         # Update CacheAccountToRedis if you update this
         'timezone': '+0000',
         'lang': 'en-us',

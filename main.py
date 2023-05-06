@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import settings as s, register_db, Env, ic
 from app.auth import AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport, \
-    get_jwt_strategy, AuthHelper, Account
+    get_jwt_strategy, AuthHelper, Account, Group
 from fixtures import fixture_router
 
 
@@ -44,9 +44,12 @@ app = get_app()
 
 
 @app.get('/private', response_model=AccountRes)
-def private(account: Account = Depends(current_user)):
-    ic(type(account))
-    ic(account.get_options())
+async def private(account: Account = Depends(current_user)):
+    # ic(type(account))
+    # ic(account.get_options())
+    groups = await Group.all()
+    # ic(groups)
+    # ic(groups[0].foo())
     return account
 
 

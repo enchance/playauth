@@ -53,5 +53,8 @@ class TestAuth:
                 assert i.is_verified
                 assert i.is_active
                 assert i.is_banned
-                
-            ic(type(i))
+            
+
+class TestGroup:
+    async def test_groups(self, initdb):
+        assert True
