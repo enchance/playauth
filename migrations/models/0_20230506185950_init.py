@@ -19,18 +19,11 @@ CREATE TABLE IF NOT EXISTS "auth_account" (
     "is_superuser" BOOL NOT NULL  DEFAULT False,
     "is_verified" BOOL NOT NULL  DEFAULT False,
     "id" UUID NOT NULL  PRIMARY KEY,
-    "display" VARCHAR(199) NOT NULL
+    "display" VARCHAR(199) NOT NULL,
+    "is_banned" BOOL NOT NULL  DEFAULT False
 );
 CREATE INDEX IF NOT EXISTS "idx_auth_accoun_deleted_112596" ON "auth_account" ("deleted_at");
-CREATE INDEX IF NOT EXISTS "idx_auth_accoun_email_3074e7" ON "auth_account" ("email");
-CREATE TABLE IF NOT EXISTS "auth_token" (
-    "id" SERIAL NOT NULL PRIMARY KEY,
-    "token" VARCHAR(70) NOT NULL,
-    "expires_at" TIMESTAMPTZ NOT NULL,
-    "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-    "account_id" UUID NOT NULL REFERENCES "auth_account" ("id") ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS "idx_auth_token_token_27c5c3" ON "auth_token" ("token");"""
+CREATE INDEX IF NOT EXISTS "idx_auth_accoun_email_3074e7" ON "auth_account" ("email");"""
 
 
 async def downgrade(db: BaseDBAsyncClient) -> str:

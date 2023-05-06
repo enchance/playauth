@@ -14,6 +14,7 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
 class UserCreate(schemas.BaseUserCreate):
     """Data needed to create a new account"""
     display: str = Field(..., max_length=s.DISPLAY_MAX)
+    is_banned: Optional[bool] = False
     # password2: str
     
     @validator('password')
@@ -32,7 +33,9 @@ class UserCreate(schemas.BaseUserCreate):
 
 
 class UserUpdate(schemas.BaseUserUpdate):
-    display: Optional[str] = Field(None, max_length=s.DISPLAY_MAX)
+    # display: Optional[str] = Field(None, max_length=s.DISPLAY_MAX)
+    # is_banned: Optional[bool] = False
+    pass
 
 
 class AccountRes(BaseModel):

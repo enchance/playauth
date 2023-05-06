@@ -18,6 +18,7 @@ class DTMixin:
 
 class Account(DTMixin, TortoiseBaseUserAccountModelUUID):
     display = fields.CharField(max_length=199)
+    is_banned = fields.BooleanField(default=False)
     
     # # OAuth
     # oauth_id: str = fields.CharField(null=True, max_length=255)

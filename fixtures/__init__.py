@@ -5,6 +5,15 @@ from app.auth import Account, AuthHelper
 
 
 
+
+
+SUPER_EMAIL = 'super@gmail.com'
+VERIFIED_EMAIL_SET = {'verified@gmail.com', 'ver2@app.co', 'ver3@app.co', 'ver4@app.co'}
+UNVERIFIED_EMAIL = 'unverified@gmail.com'
+INACTIVE_VERIFIED_EMAIL = 'inactive_verified@gmail.com'
+INACTIVE_UNVERIFIED_EMAIL = 'inactive_unverified@gmail.com'
+BANNED_EMAIL = 'banned@gmail.com'
+
 fixture_router = APIRouter()
 
 @fixture_router.get('/init', summary='Initial data for the project')
@@ -24,7 +33,7 @@ async def insert_accounts() -> list[str]:
     current_emails = await Account.all().values_list('email', flat=True)
     
     # Super users
-    dataset = {'super@gmail.com'}
+    dataset = {SUPER_EMAIL}
     # superset = {random_email()}
     createset = dataset - set(current_emails)
     if createset:
@@ -34,8 +43,7 @@ async def insert_accounts() -> list[str]:
                 total += 1
     
     # Verified users
-    dataset = {'verified1@gmail.com', 'ver2@app.co', 'ver3@app.co', 'ver4@app.co'}
-    createset = dataset - set(current_emails)
+    createset = VERIFIED_EMAIL_SET - set(current_emails)
     if createset:
         for email in createset:
             if _ := await AuthHelper.create_user(email=email, password=password, is_verified=True):
@@ -43,29 +51,29 @@ async def insert_accounts() -> list[str]:
     
     # Unverified users
     # unverifiedset = {'unverified@gmail.com'}.union({random_email() for _ in range(2)})
-    dataset = {'unverified@gmail.com'}
+    dataset = {UNVERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
             if _ := await AuthHelper.create_user(email=i, password=password):
                 total += 1
     
-    dataset = {'inactive_verified@gmail.com'}
+    dataset = {INACTIVE_VERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if _ := await AuthHelper.create_user(email=i, password=password, is_active=False,
-                                                 is_verified=True):
+            if _ := await AuthHelper.create_user(email=i, password=password,is_verified=True,
+                                                 is_active=False):
                 total += 1
     
-    dataset = {'inactive_unverified@gmail.com'}
+    dataset = {INACTIVE_UNVERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
             if _ := await AuthHelper.create_user(email=i, password=password, is_active=False):
                 total += 1
     
-    dataset = {'banned@gmail.com'}
+    dataset = {BANNED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
