@@ -21,5 +21,8 @@ GROUP_FIXTURES = {
     'DemoGroup': {
         'description': 'Descriptive data',
         'demo': ['foo', 'bar']
-    }
+    },
+    'EmptyGroup': {
+        'description': 'Nothing here'
+    },
 }

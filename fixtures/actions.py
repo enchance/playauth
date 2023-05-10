@@ -50,7 +50,6 @@ async def seed_accounts() -> list[str]:
                 _cache_groups(account.id, default_groups)
                 
                 if group := await Group.get_or_none(name='AdminGroup').only('id','name'):
-                    ic('ADDING EXTRA')
                     await account.groups.add(group)
                     _cache_permissions(account.id, [group])
                     _cache_groups(account.id, [group])
@@ -123,16 +122,19 @@ async def seed_groups() -> list[str]:
         if name in grouplist:
             continue
             
-        permissionset = set()
+        permset = set()
         desc = datamap.pop('description')
-        for title, perms in datamap.items():
-            for i in perms:
-                permissionset.add(f'{title}.{i}')
-        ll.append(Group(name=name, description=desc, permissions=permissionset))
+        if datamap:
+            for title, perms in datamap.items():
+                for i in perms:
+                    permset.add(f'{title}.{i}')
+        else:
+            permset = None
+        ll.append(Group(name=name, description=desc, permissions=permset))
         total += 1
         
         cachekey = s.redis.GROUP_PERMISSIONS.format(name)
-        red.set(cachekey, permissionset)
+        red.set(cachekey, permset)
         nameset.add(name)
     ll and await Group.bulk_create(ll)
     
