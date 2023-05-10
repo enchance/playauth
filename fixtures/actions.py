@@ -33,6 +33,10 @@ async def seed_accounts() -> list[str]:
             accountperms = accountperms.union(group_perms)    # noqa
         accountperms and red.set(acct_cachekey, accountperms)
     
+    def _cache_groups(id: uuid.UUID, datalist: list[Group]):
+        cachekey = s.redis.ACCOUNT_GROUPS.format(account.id)
+        red.set(cachekey, {i.name for i in datalist})
+    
     
     # Super users
     dataset = {SUPER_EMAIL}
@@ -43,10 +47,13 @@ async def seed_accounts() -> list[str]:
                                                        is_verified=True):
                 await account.groups.add(*default_groups)
                 _cache_permissions(account.id, default_groups)
+                _cache_groups(account.id, default_groups)
+                
                 if group := await Group.get_or_none(name='AdminGroup').only('id','name'):
                     ic('ADDING EXTRA')
                     await account.groups.add(group)
                     _cache_permissions(account.id, [group])
+                    _cache_groups(account.id, [group])
                 total += 1
     
     # Verified users
@@ -56,6 +63,7 @@ async def seed_accounts() -> list[str]:
             if account := await AuthHelper.create_user(email=email, password=password, is_verified=True):
                 await account.groups.add(*default_groups)
                 _cache_permissions(account.id, default_groups)
+                _cache_groups(account.id, default_groups)
                 total += 1
                 
     # Unverified users
@@ -67,6 +75,7 @@ async def seed_accounts() -> list[str]:
             if account := await AuthHelper.create_user(email=i, password=password):
                 await account.groups.add(*default_groups)
                 _cache_permissions(account.id, default_groups)
+                _cache_groups(account.id, default_groups)
                 total += 1
     
     dataset = {INACTIVE_VERIFIED_EMAIL}
@@ -77,6 +86,7 @@ async def seed_accounts() -> list[str]:
                                                        is_active=False):
                 await account.groups.add(*default_groups)
                 _cache_permissions(account.id, default_groups)
+                _cache_groups(account.id, default_groups)
                 total += 1
     
     dataset = {INACTIVE_UNVERIFIED_EMAIL}
@@ -86,6 +96,7 @@ async def seed_accounts() -> list[str]:
             if account := await AuthHelper.create_user(email=i, password=password, is_active=False):
                 await account.groups.add(*default_groups)
                 _cache_permissions(account.id, default_groups)
+                _cache_groups(account.id, default_groups)
                 total += 1
     
     dataset = {BANNED_EMAIL}
@@ -96,6 +107,7 @@ async def seed_accounts() -> list[str]:
                                                        is_banned=True):
                 await account.groups.add(*default_groups)
                 _cache_permissions(account.id, default_groups)
+                _cache_groups(account.id, default_groups)
                 total += 1
     
     return [f'ACCOUNTS_CREATED - {total} new']
