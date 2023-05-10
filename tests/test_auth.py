@@ -11,14 +11,13 @@ from fixtures import SUPER_EMAIL, VERIFIED_EMAIL_SET, UNVERIFIED_EMAIL, INACTIVE
 
 
 class TestAuth:
-    @mark.focus
+    # @mark.focus
     async def test_accounts(self, initdb):
         accounts = await Account.all().prefetch_related(
             Prefetch('groups', queryset=Group.all().only('id', 'name'))
         )
         
         for i in accounts:
-            # ic(list(i.groups))
             if i.email == SUPER_EMAIL:
                 assert Counter([j.name for j in i.groups]) == \
                        Counter(s.DEFAULT_GROUPS + ['AdminGroup'])
@@ -60,7 +59,7 @@ class TestAuth:
                 assert i.is_verified
                 assert i.is_active
                 assert i.is_banned
-            
+
 
 class TestGroup:
     async def test_groups(self, initdb):

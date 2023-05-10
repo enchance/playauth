@@ -5,8 +5,9 @@ from tortoise import Tortoise, connections
 
 from main import get_app
 from app import ic
+from app.auth import Account
 from app.db import DATABASE_URL, DATABASE_MODELS
-from fixtures import init
+from fixtures import init, SUPER_EMAIL, VERIFIED_EMAIL_SET
 
 
 
@@ -64,3 +65,16 @@ WHERE pg_stat_activity.datname = '{}' AND pid <> pg_backend_pid();
     
     # Seed
     await seed()
+
+
+@pytest.fixture(scope='module')
+async def account(initdb):
+    account = await Account.get(email=VERIFIED_EMAIL_SET[0]).prefetch_related('groups')
+    return account
+
+
+@pytest.fixture(scope='module')
+async def superuser(initdb):
+    account = await Account.get(email=SUPER_EMAIL).prefetch_related('groups')
+    return account
+
