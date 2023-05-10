@@ -1,4 +1,4 @@
-import uuid, secrets, pytz, math, time
+import uuid, secrets, pytz, math, time, ast
 from contextlib import  asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Optional
@@ -87,6 +87,12 @@ class AuthHelper:
         async with get_user_db_context() as user_db:
             async with get_user_manager_context(user_db) as user_manager:
                 return await user_manager.create(UserCreate(**kwargs, display=''))
+            
+    @staticmethod
+    def parse_response_body(response: Response, charset: str = 'utf-8') -> dict:
+        strdict = response.body.decode(charset)
+        datamap = ast.literal_eval(strdict)
+        return datamap
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
@@ -105,6 +111,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
         cachedata = cookiedata.pop('cachedata')
         # // TODO: Save cachedata to cache
         response.set_cookie(**cookiedata)
+
+        datamap = AuthHelper.parse_response_body(response)
+        access_token = datamap.get('access_token')
+        # TODO: Save access_token to cache
         # ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
 
 async def get_user_db():

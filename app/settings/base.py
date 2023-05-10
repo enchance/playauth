@@ -14,7 +14,7 @@ class BaseSettings:
     
     # Authentication
     SECRET_KEY = config('SECRET_KEY')
-    ACCESS_TOKEN_TTL = 3600                 # sec
+    ACCESS_TOKEN_TTL = 3600 * 24 * 3        # sec
     REFRESH_TOKEN_TTL = 3600 * 24 * 7       # sec
     VERIFY_TOKEN_TTL = 3600 * 2             # sec
     RESET_PASSWORD_TOKEN_TTL = 3600         # sec
