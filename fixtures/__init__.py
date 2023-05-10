@@ -12,8 +12,8 @@ async def init(accounts: bool = True, groups: bool = True) -> list[str]:
     success = []
     
     if groups:
-        success += await insert_groups()
+        success += await seed_groups()
     if accounts:
-        success += await insert_accounts()
+        success += await seed_accounts()
         
     return success

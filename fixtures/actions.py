@@ -1,4 +1,6 @@
-from app import ic
+import uuid
+
+from app import ic, red
 from app.settings import settings as s
 from app.auth import Account, Group, AuthHelper
 from .data import GROUP_FIXTURES
@@ -11,32 +13,40 @@ INACTIVE_VERIFIED_EMAIL = 'inactive_verified@gmail.com'
 INACTIVE_UNVERIFIED_EMAIL = 'inactive_unverified@gmail.com'
 BANNED_EMAIL = 'banned@gmail.com'
 
-async def insert_accounts() -> list[str]:
+
+async def seed_accounts() -> list[str]:
     """Create nenw accounts for testing"""
     total = 0
     password = 'pass123'        # noqa
     
     current_emails = await Account.all().values_list('email', flat=True)
-    grouplist = await Group.all().only('id', 'name')
+    default_groups = await Group.filter(name__in=s.DEFAULT_GROUPS).only('id', 'name')
     
-    async def _add_default_groups(account_: Account):
-        for i in s.DEFAULT_GROUPS:
-            for grp in grouplist:
-                if grp.name == i:
-                    await account_.groups.add(grp)
+    def _cache_permissions(id: uuid.UUID, grouplist: list[Group]):      # noqa
+        groupnames = {j.name for j in grouplist}
+        acct_cachekey = s.redis.ACCOUNT_PERMISSIONS.format(id)
+        accountperms = red.get(acct_cachekey) or set()
+        
+        for name in groupnames:
+            group_cachekey = s.redis.GROUP_PERMISSIONS.format(name)
+            group_perms = red.get(group_cachekey)
+            accountperms = accountperms.union(group_perms)    # noqa
+        accountperms and red.set(acct_cachekey, accountperms)
+    
     
     # Super users
     dataset = {SUPER_EMAIL}
-    # superset = {random_email()}
     createset = dataset - set(current_emails)
     if createset:
         for email in createset:
             if account := await AuthHelper.create_user(email=email, password=password, is_superuser=True,
                                                        is_verified=True):
-                await _add_default_groups(account)
-                if group := await Group.get_or_none(name='AdminGroup'):
+                await account.groups.add(*default_groups)
+                _cache_permissions(account.id, default_groups)
+                if group := await Group.get_or_none(name='AdminGroup').only('id','name'):
                     ic('ADDING EXTRA')
                     await account.groups.add(group)
+                    _cache_permissions(account.id, [group])
                 total += 1
     
     # Verified users
@@ -44,9 +54,10 @@ async def insert_accounts() -> list[str]:
     if createset:
         for email in createset:
             if account := await AuthHelper.create_user(email=email, password=password, is_verified=True):
-                await _add_default_groups(account)
+                await account.groups.add(*default_groups)
+                _cache_permissions(account.id, default_groups)
                 total += 1
-    
+                
     # Unverified users
     # unverifiedset = {'unverified@gmail.com'}.union({random_email() for _ in range(2)})
     dataset = {UNVERIFIED_EMAIL}
@@ -54,7 +65,8 @@ async def insert_accounts() -> list[str]:
     if createset:
         for i in createset:
             if account := await AuthHelper.create_user(email=i, password=password):
-                await _add_default_groups(account)
+                await account.groups.add(*default_groups)
+                _cache_permissions(account.id, default_groups)
                 total += 1
     
     dataset = {INACTIVE_VERIFIED_EMAIL}
@@ -62,8 +74,9 @@ async def insert_accounts() -> list[str]:
     if createset:
         for i in createset:
             if account := await AuthHelper.create_user(email=i, password=password,is_verified=True,
-                                                 is_active=False):
-                await _add_default_groups(account)
+                                                       is_active=False):
+                await account.groups.add(*default_groups)
+                _cache_permissions(account.id, default_groups)
                 total += 1
     
     dataset = {INACTIVE_UNVERIFIED_EMAIL}
@@ -71,7 +84,8 @@ async def insert_accounts() -> list[str]:
     if createset:
         for i in createset:
             if account := await AuthHelper.create_user(email=i, password=password, is_active=False):
-                await _add_default_groups(account)
+                await account.groups.add(*default_groups)
+                _cache_permissions(account.id, default_groups)
                 total += 1
     
     dataset = {BANNED_EMAIL}
@@ -80,29 +94,39 @@ async def insert_accounts() -> list[str]:
         for i in createset:
             if account := await AuthHelper.create_user(email=i, password=password, is_verified=True,
                                                        is_banned=True):
-                await _add_default_groups(account)
+                await account.groups.add(*default_groups)
+                _cache_permissions(account.id, default_groups)
                 total += 1
     
     return [f'ACCOUNTS_CREATED - {total} new']
 
 
-async def insert_groups() -> list[str]:
+async def seed_groups() -> list[str]:
     total = 0
     grouplist = await Group.all().values_list('name', flat=True)
     
     ll = []
+    nameset = set(grouplist)
     for name, datamap in GROUP_FIXTURES.items():
         if name in grouplist:
             continue
             
-        permlist = set()
+        permissionset = set()
         desc = datamap.pop('description')
         for title, perms in datamap.items():
             for i in perms:
-                permlist.add(f'{title}.{i}')
-        ll.append(Group(name=name, description=desc, permissions=permlist))
+                permissionset.add(f'{title}.{i}')
+        ll.append(Group(name=name, description=desc, permissions=permissionset))
         total += 1
+        
+        cachekey = s.redis.GROUP_PERMISSIONS.format(name)
+        red.set(cachekey, permissionset)
+        nameset.add(name)
     ll and await Group.bulk_create(ll)
+    
+    # redis
+    cachekey = s.redis.GROUPS
+    nameset and red.set(cachekey, nameset)
     
     
     return [f'GROUPS_CREATED - {total} groups']
