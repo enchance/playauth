@@ -7,6 +7,7 @@ from fastapi_users import UUIDIDMixin, BaseUserManager, FastAPIUsers
 from fastapi_users.authentication import (
     JWTStrategy, BearerTransport, AuthenticationBackend
 )
+from tortoise.query_utils import Prefetch
 
 from app import settings as s, ic
 # from .models import *
@@ -104,7 +105,13 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     reset_password_token_lifetime_seconds = s.RESET_PASSWORD_TOKEN_TTL
     reset_password_token_audience = RESET_PASSWORD_TOKEN_AUD
     
-    async def on_after_login(self, user: Account, request: Optional[Request] = None,
+    # TESTME: Untested
+    async def on_after_register(self, account: Account, request: Optional[Request] = None):
+        default_groups = await Group.filter(name__in=s.DEFAULT_GROUPS).only('id')
+        await account.groups.add(*default_groups)
+    
+    # TESTME: Untested
+    async def on_after_login(self, account: Account, request: Optional[Request] = None,
                              response: Optional[Response] = None):
         # Always generate a new refresh_token on login
         cookiedata = AuthHelper.refresh_cookie_generator()

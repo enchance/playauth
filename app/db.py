@@ -1,11 +1,27 @@
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
-
-from .settings import settings as s
+from limeutils import Red
 from decouple import config
 
+from .settings import settings as s
 
 
+
+# Redis
+REDIS_TTL = 3600 * 24 * 15
+REDIS_CONFIG: dict = {
+    'host': config('REDIS_HOST', 'localhost'),
+    'port': config('REDIS_PORT', 6379),
+    # 'password': os.getenv('REDIS_PASSWORD'),
+}
+REDIS_CUSTOM = {
+    'pre': s.APPCODE,
+    'ver': 'v1',
+    'ttl': REDIS_TTL,
+}
+red = Red(**REDIS_CONFIG, **REDIS_CUSTOM)
+
+# Postgres
 DATABASE_URL = config('DATABASE_URL_DEV')
 DATABASE_MODELS = [
     'aerich.models',

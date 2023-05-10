@@ -4,7 +4,7 @@ from tortoise import Tortoise, connections
 
 
 from main import get_app
-from app import ic
+from app import ic, red
 from app.auth import Account
 from app.db import DATABASE_URL, DATABASE_MODELS
 from fixtures import init, SUPER_EMAIL, VERIFIED_EMAIL_SET
@@ -51,13 +51,14 @@ WHERE pg_stat_activity.datname = '{}' AND pid <> pg_backend_pid();
     # Switch database so you can drop the other
     await Tortoise.init(db_url=postgresurl, modules={'models': DATABASE_MODELS})
     
+    # Postgres
     conn = connections.get("default")
     await conn.execute_query(stmt)
     await conn.execute_query(f'DROP DATABASE {dbname}')             # noqa
     await conn.execute_query(f'CREATE DATABASE {dbname}')           # noqa
     
-    # TODO: Enable once redis is implemented
-    # red.flushdb()
+    # Redis
+    red.flushdb()
     
     # Return to newly created database
     await Tortoise.init(db_url=DATABASE_URL, modules={'models': DATABASE_MODELS})
