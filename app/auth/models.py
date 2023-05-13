@@ -51,7 +51,6 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         return self.options
     
     
-    # TESTME: Untested
     @property
     async def groupset(self) -> set[str]:
         """Get collated group names of user."""

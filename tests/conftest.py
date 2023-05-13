@@ -80,8 +80,9 @@ async def superuser(initdb):
 @pytest.fixture(scope='module')
 def group_fixture_data():
     data = config('ENV') == 'development' and GROUP_FIXTURES_DEV or GROUP_FIXTURES_PROD
-    d = {}
-    d['groups'] = list(data.keys())
+    d = {
+        'groups': list(data.keys())
+    }
 
     for name, permdata in data.items():
         permset = set()

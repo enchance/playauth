@@ -1,4 +1,4 @@
-import pytest
+import pytest, time
 from collections import Counter
 from pytest import mark
 from tortoise.query_utils import Prefetch
@@ -67,6 +67,37 @@ class TestAuth:
             cachekey = s.redis.GROUP_PERMISSIONS.format(name)
             cached_perms = red.get(cachekey, set())
             assert Counter(cached_perms) == Counter(group_fixture_data[name])
+            
+    
+    # @mark.focus
+    async def test_groupset(self, account: Account):
+        cachekey = s.redis.ACCOUNT_GROUPS.format(account.id)
+        red.delete(cachekey)
+
+        start = time.time()
+        dbdata = await account.groupset
+        dbdur = time.time() - start
+
+        start = time.time()
+        cachedata = await account.groupset
+        cachedur = time.time() - start
+
+        assert dbdur > cachedur
+        assert Counter(dbdata) == Counter(cachedata)
+        
+    # @mark.focus
+    # async def test_account_group_names(self, account: Account, group_fixture_data):
+    #     cachekey = s.redis.GROUP_PERMISSIONS.format()
+    #     # start = time.time()
+    #     perms = red.get(s.redis.GROUP_PERMISSIONS.format('AccountGroup'))
+    #     ic(perms)
+    #
+    #     # start = time.time()
+    #     perms = await Group.get_or_none(name='AccountGroup').values('permissions')
+    #     ic(perms)
+    #
+    #     perms = await account.permissionset
+    #     ic(perms)
 
 
 class TestGroup:
