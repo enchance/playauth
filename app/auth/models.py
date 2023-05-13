@@ -94,7 +94,6 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         return dataset
 
     
-    # TESTME: Untested
     async def has(self, *args: str, partials: bool = True) -> bool:
         """
         Check if the account has the following permission/s and/or group/s.

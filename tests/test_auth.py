@@ -86,7 +86,7 @@ class TestAuth:
         assert Counter(dbdata) == Counter(cachedata)
         
     
-    @mark.focus
+    # @mark.focus
     async def test_permissionset(self, account: Account):
         for name in await account.groupset:
             red.delete(s.redis.GROUP_PERMISSIONS.format(name))
@@ -101,6 +101,25 @@ class TestAuth:
 
         assert dbdur > cachedur
         assert Counter(dbdata) == Counter(cachedata)
+        
+    
+    @mark.parametrize('args, partials, out', [
+        (['AccountGroup'], True, True), (['UploadGroup'], True, True), (['AdminGroup'], True, False),
+        (['account.read'], True, True), (['group.attach'], True, False),
+        (['account.read', 'group.attach'], True, True), (['group.attach', 'account.read'], True, True),
+        (['account.read', 'group.attach'], False, False), (['group.attach', 'account.read'], False, False),
+        (['AccountGroup', 'account.read'], True, True),
+        (['AdminGroup', 'account.read'], True, True), (['account.read', 'AdminGroup'], True, True),
+        (['AdminGroup', 'account.read'], False, False),
+        (['AdminGroup', 'account.read'], False, False), (['account.read', 'AdminGroup'], False, False),
+        (['Foo'], True, False),
+        (['Foo', 'account.read'], True, True), (['Foo', 'account.read'], False, False),
+        (['xxx.yyy'], True, False),
+        (['xxx.yyy', 'account.read'], True, True), (['xxx.yyy', 'account.read'], False, False),
+    ])
+    @mark.focus
+    async def test_has(self, account: Account, group_fixture_data, args, partials, out):
+        assert await account.has(*args, partials=partials) == out
         
     # @mark.focus
     # async def test_account_group_names(self, account: Account, group_fixture_data):
