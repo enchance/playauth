@@ -25,7 +25,7 @@ class BaseSettings:
     PASSWORD_MIN = 12
     
     # Authentication
-    DEFAULT_GROUPS = ['AccountGroup']
+    DEFAULT_GROUPS = ['AccountGroup', 'UploadGroup']
     SECRET_KEY = config('SECRET_KEY')
     ACCESS_TOKEN_TTL = 3600 * 24 * 3        # sec
     REFRESH_TOKEN_TTL = 3600 * 24 * 7       # sec

@@ -747,14 +747,14 @@ files = [
 
 [[package]]
 name = "limeutils"
-version = "0.2.14"
+version = "0.2.15"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "limeutils-0.2.14-py3-none-any.whl", hash = "sha256:ffe3992c364402d6cd5520f0d0196f31a1174f1a8189b3a69b2f1d11a88bacfb"},
-    {file = "limeutils-0.2.14.tar.gz", hash = "sha256:1a21ef64e247a0626c5e1308fd3f4fe3d0c123fa61ac7f2f17f21ddb045e6659"},
+    {file = "limeutils-0.2.15-py3-none-any.whl", hash = "sha256:d2dc8d66d78f7385c50415dec674818aa3030a15d21cbe158086dc1fb1fc6a5f"},
+    {file = "limeutils-0.2.15.tar.gz", hash = "sha256:15aa3cae5f689a2bf3e3b43e4db86fca78feb37fd716de75780aeb6ef1ceeb4d"},
 ]
 
 [package.dependencies]

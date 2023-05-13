@@ -17,6 +17,11 @@ GROUP_FIXTURES_DEV = {
     'AccountGroup': {
         'description': 'Account management',
         'account': ru,
+        'foo': ['bar']
+    },
+    'UploadGroup': {
+        'description': 'Settings management',
+        'avatar': ru
     },
     'EmptyGroup': {
         'description': 'Nothing here',
