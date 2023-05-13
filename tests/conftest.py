@@ -18,6 +18,7 @@ async def client(initdb):
     async with httpx.AsyncClient(app=app, base_url='http://test/') as ac:
         yield ac
         
+        
 @pytest.fixture(scope='session')
 def event_loop():
     """
@@ -29,11 +30,13 @@ def event_loop():
     yield loop
     loop.close()
     
+    
 @pytest.fixture(scope='session')
 def seed():
     async def ab():
         await init()
     yield ab
+
 
 @pytest.fixture(scope='session')
 async def initdb(seed):
@@ -76,6 +79,7 @@ async def account(initdb):
 async def superuser(initdb):
     account = await Account.get_or_none(email=SUPER_EMAIL).prefetch_related('groups')
     return account
+
 
 @pytest.fixture(scope='module')
 def group_fixture_data():

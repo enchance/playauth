@@ -29,15 +29,11 @@ class Group(GroupMod, models.Model):
 
         def _dbdata() -> set[str]:
             if data := self.permissions:
+                red.set(cachekey, set(data))
                 return set(data)
             return set()
 
-        if dataset := _cachedata():
-            pass
-        elif dataset := _dbdata():
-            red.set(cachekey, dataset)
-        else:
-            red.set(cachekey, dataset)
+        dataset = _cachedata() or _dbdata()
         return dataset
     
     

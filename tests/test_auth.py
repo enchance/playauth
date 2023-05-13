@@ -120,20 +120,6 @@ class TestAuth:
     @mark.focus
     async def test_has(self, account: Account, group_fixture_data, args, partials, out):
         assert await account.has(*args, partials=partials) == out
-        
-    # @mark.focus
-    # async def test_account_group_names(self, account: Account, group_fixture_data):
-    #     cachekey = s.redis.GROUP_PERMISSIONS.format()
-    #     # start = time.time()
-    #     perms = red.get(s.redis.GROUP_PERMISSIONS.format('AccountGroup'))
-    #     ic(perms)
-    #
-    #     # start = time.time()
-    #     perms = await Group.get_or_none(name='AccountGroup').values('permissions')
-    #     ic(perms)
-    #
-    #     perms = await account.permissionset
-    #     ic(perms)
 
 
 class TestGroup:
