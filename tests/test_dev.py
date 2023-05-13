@@ -8,8 +8,13 @@ from app.auth import Account, Group
 
 # @mark.skip
 @mark.dev
-async def test_dev(initdb):
+async def dev(initdb):
     a = {2, 3, 4, 5}
+    account = await Account.get_or_none(email='verified@gmail.com').prefetch_related('groups')
+    # groupset = {i.name for i in account.groups}
+
+    # groups = await Group.filter(name__in=['AdminGroup', 'AccountGroup']).values('id', 'name')
+    # ic(groups)
     
     # a = a.intersection(b)
     # print(a)
@@ -21,7 +26,6 @@ async def test_dev(initdb):
     # ic(group)
     # ic(type(group.permissions), group.permissions)
 
-    # accounts = await Account.filter(email='verified@gmail.comx').only('id', 'email')
     # ic(type(accounts), accounts)
     
     # account = await Account.get(email='super@gmail.com')

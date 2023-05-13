@@ -4,7 +4,7 @@ from tortoise.exceptions import OperationalError
 from fastapi_users_tortoise import TortoiseUserDatabase, TortoiseBaseUserAccountModelUUID
 from redis.exceptions import RedisError
 
-from app import red, settings as s
+from app import red, settings as s, ic
 from .dbmods import AccountMod, GroupMod
 
 
@@ -64,39 +64,33 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
             groups = await Group.filter(groupaccounts__id=self.id).only('id', 'name')
             return {i.name for i in groups}
 
-        if dataset := _cachedata():
-            pass
-        elif dataset := await _dbdata():
-            red.set(cachekey, dataset)
-        else:
-            red.set(cachekey, dataset)
+        dataset = _cachedata() or await _dbdata()
         return dataset
 
 
-    # TESTME: Untested
     @property
     async def permissionset(self) -> set[str]:
         """Get collated permissions of user."""
-        cachekey = s.redis.ACCOUNT_PERMISSIONS.format(self.id)
 
-        def _cachedata() -> set[str]:        # noqa
-            data = red.get(cachekey, set())
-            return data
+        async def _cachedata() -> set[str]:        # noqa
+            set_ = set()
+            for name in await self.groupset:
+                cachekey = s.redis.GROUP_PERMISSIONS.format(name)
+                cached_data = red.get(cachekey, set())
+                set_ = set_.union(cached_data)
+            return set_
 
         async def _dbdata() -> set[str]:
             set_ = set()
             groupset = await self.groupset
             groups = await Group.filter(name__in=groupset)
             for i in groups:
-                set_ = set_.union(await i.permissionset)      # noqa
+                cachekey = s.redis.GROUP_PERMISSIONS.format(i.name)
+                red.set(cachekey, set(i.permissions))
+                set_ = set_.union(set(i.permissions))      # noqa
             return set_
 
-        if dataset := _cachedata():
-            pass
-        elif dataset := await _dbdata():
-            red.set(cachekey, dataset)
-        else:
-            red.set(cachekey, dataset)
+        dataset = await _cachedata() or await _dbdata()
         return dataset
 
     
