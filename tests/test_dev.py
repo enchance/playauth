@@ -7,7 +7,7 @@ from app.auth import Account, Group
 
 @mark.skip
 # @mark.dev
-async def test_dev(initdb):
+async def dev(initdb):
     # group = await Group.get_or_none(name='EmptyGroup')
     # ic(group)
     # ic(type(group.permissions), group.permissions)

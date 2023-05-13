@@ -6,8 +6,8 @@ class RedisKeys:
     GROUPS = 'app:groups'
     GROUP_PERMISSIONS = 'group:{}-permissions'
     ACCOUNT_TOKEN = 'user:{}-token'
-    ACCOUNT_PERMISSIONS = 'user:{}-permissions'
     ACCOUNT_GROUPS = 'user:{}-groups'
+    ACCOUNT_PERMISSIONS = 'user:{}-permissions'
 
 
 class BaseSettings:

@@ -2,13 +2,11 @@ import pytest, asyncio, httpx
 from decouple import config
 from tortoise import Tortoise, connections
 
-
 from main import get_app
 from app import ic, red
 from app.auth import Account
 from app.db import DATABASE_URL, DATABASE_MODELS
-from fixtures import init, SUPER_EMAIL, VERIFIED_EMAIL_SET
-
+from fixtures import init, SUPER_EMAIL, VERIFIED_EMAIL_SET, GROUP_FIXTURES_DEV, GROUP_FIXTURES_PROD
 
 
 app = get_app()
@@ -79,3 +77,16 @@ async def superuser(initdb):
     account = await Account.get(email=SUPER_EMAIL).prefetch_related('groups')
     return account
 
+@pytest.fixture(scope='module')
+def group_fixture_data():
+    data = config('ENV') == 'development' and GROUP_FIXTURES_DEV or GROUP_FIXTURES_PROD
+    d = {}
+    d['groups'] = list(data.keys())
+
+    for name, permdata in data.items():
+        permset = set()
+        for title, perms in permdata.items():
+            for i in perms:
+                permset.add(f'{title}.{i}')
+        d[name] = permset
+    return d
