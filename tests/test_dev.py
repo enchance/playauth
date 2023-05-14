@@ -8,9 +8,9 @@ from app.auth import Account, Group
 
 # @mark.skip
 @mark.dev
-async def dev(initdb):
+async def test_dev(initdb):
     a = {2, 3, 4, 5}
-    account = await Account.get_or_none(email='verified@gmail.com').prefetch_related('groups')
+    # account = await Account.get_or_none(email='verified@gmail.com').select_related('role')
     # groupset = {i.name for i in account.groups}
 
     # groups = await Group.filter(name__in=['AdminGroup', 'AccountGroup']).values('id', 'name')
@@ -28,6 +28,6 @@ async def dev(initdb):
 
     # ic(type(accounts), accounts)
     
-    # account = await Account.get(email='super@gmail.com')
+    account = await Account.get(email='super@gmail.com').select_related('role')
     # await account.fetch_related('groups')
-    # ic(list(account.groups))
+    # ic(account.role)

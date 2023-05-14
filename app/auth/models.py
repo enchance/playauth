@@ -17,24 +17,24 @@ class Group(GroupMod, models.Model):
     # def cache_user_groups(account):
     #     pass
 
-    # TESTME: Untested
-    @property
-    async def permissionset(self) -> set[str]:
-        """Get permissions of a group."""
-        cachekey = s.redis.GROUP_PERMISSIONS.format(self.name)
-
-        def _cachedata() -> set[str]:
-            data = red.get(cachekey, set())
-            return data
-
-        def _dbdata() -> set[str]:
-            if data := self.permissions:
-                red.set(cachekey, set(data))
-                return set(data)
-            return set()
-
-        dataset = _cachedata() or _dbdata()
-        return dataset
+    # # TESTME: Untested
+    # @property
+    # async def permissionset(self) -> set[str]:
+    #     """Get permissions of a group."""
+    #     cachekey = s.redis.GROUP_PERMISSIONS.format(self.name)
+    #
+    #     def _cachedata() -> set[str]:
+    #         data = red.get(cachekey, set())
+    #         return data
+    #
+    #     def _dbdata() -> set[str]:
+    #         if data := self.permissions:
+    #             red.set(cachekey, set(data))
+    #             return set(data)
+    #         return set()
+    #
+    #     dataset = _cachedata() or _dbdata()
+    #     return dataset
     
     
 class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
@@ -57,8 +57,9 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
             return data
 
         async def _dbdata() -> set[str]:
-            groups = await Group.filter(groupaccounts__id=self.id).only('id', 'name')
-            return {i.name for i in groups}
+            groups = set(self.role.groups) or set()
+            red.set(cachekey, groups)
+            return groups
 
         dataset = _cachedata() or await _dbdata()
         return dataset

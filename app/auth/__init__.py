@@ -107,8 +107,10 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     
     # TESTME: Untested
     async def on_after_register(self, account: Account, request: Optional[Request] = None):
-        default_groups = await Group.filter(name__in=s.DEFAULT_GROUPS).only('id')
-        await account.groups.add(*default_groups)
+        # default_groups = await Group.filter(name__in=s.DEFAULT_GROUPS).only('id')
+        if starter_role := await Role.get_or_none(name='starter'):
+            account.role = starter_role
+            await account.save(update_fields=['role_id'])
     
     # TESTME: Untested
     async def on_after_login(self, account: Account, request: Optional[Request] = None,

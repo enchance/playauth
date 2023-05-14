@@ -13,6 +13,7 @@ async def init(accounts: bool = True, groups: bool = True) -> list[str]:
     
     if groups:
         success += await seed_groups()
+        success += await seed_roles()
     if accounts:
         success += await seed_accounts()
         

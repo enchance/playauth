@@ -4,7 +4,7 @@ from pytest import mark
 from tortoise.query_utils import Prefetch
 
 from app import ic, settings as s, red
-from app.auth import Account, Group
+from app.auth import Account, Group, Role
 from fixtures import SUPER_EMAIL, VERIFIED_EMAIL_SET, UNVERIFIED_EMAIL, INACTIVE_VERIFIED_EMAIL, \
     INACTIVE_UNVERIFIED_EMAIL, BANNED_EMAIL
 
@@ -13,48 +13,47 @@ from fixtures import SUPER_EMAIL, VERIFIED_EMAIL_SET, UNVERIFIED_EMAIL, INACTIVE
 class TestAuth:
     # @mark.focus
     async def test_accounts(self, initdb):
-        accounts = await Account.all().prefetch_related(
-            Prefetch('groups', queryset=Group.all().only('id', 'name'))
-        )
+        accounts = await Account.all().select_related('role')
+        admin_role = await Role.get_or_none(name='admin').only('id')
+        starter_role = await Role.get_or_none(name='starter').only('id')
         
         for i in accounts:
             if i.email == SUPER_EMAIL:
-                assert Counter([j.name for j in i.groups]) == \
-                       Counter(s.DEFAULT_GROUPS + ['AdminGroup'])
+                assert i.role == admin_role
                 assert i.is_superuser
                 assert i.is_verified
                 assert i.is_active
                 assert not i.is_banned
                 assert i.options.get('lang') ==  'en-us'
             elif i.email in VERIFIED_EMAIL_SET:
-                assert Counter([j.name for j in i.groups]) == Counter(s.DEFAULT_GROUPS)
+                assert i.role == starter_role
                 assert not i.is_superuser
                 assert i.is_verified
                 assert i.is_active
                 assert not i.is_banned
                 assert i.options.get('lang') ==  'en-us'
             elif i.email == UNVERIFIED_EMAIL:
-                assert Counter([j.name for j in i.groups]) == Counter(s.DEFAULT_GROUPS)
+                assert i.role == starter_role
                 assert not i.is_superuser
                 assert not i.is_verified
                 assert i.is_active
                 assert not i.is_banned
                 assert i.options.get('lang') ==  'en-us'
             elif i.email == INACTIVE_VERIFIED_EMAIL:
-                assert Counter([j.name for j in i.groups]) == Counter(s.DEFAULT_GROUPS)
+                assert i.role == starter_role
                 assert not i.is_superuser
                 assert i.is_verified
                 assert not i.is_active
                 assert i.options.get('lang') ==  'en-us'
                 assert not i.is_banned
             elif i.email == INACTIVE_UNVERIFIED_EMAIL:
-                assert Counter([j.name for j in i.groups]) == Counter(s.DEFAULT_GROUPS)
+                assert i.role == starter_role
                 assert not i.is_superuser
                 assert not i.is_verified
                 assert not i.is_active
                 assert not i.is_banned
             elif i.email == BANNED_EMAIL:
-                assert Counter([j.name for j in i.groups]) == Counter(s.DEFAULT_GROUPS)
+                assert i.role == starter_role
                 assert not i.is_superuser
                 assert i.is_verified
                 assert i.is_active
@@ -86,7 +85,7 @@ class TestAuth:
         assert Counter(dbdata) == Counter(cachedata)
         
     
-    # @mark.focus
+    @mark.focus
     async def test_permissionset(self, account: Account):
         for name in await account.groupset:
             red.delete(s.redis.GROUP_PERMISSIONS.format(name))
@@ -117,7 +116,7 @@ class TestAuth:
         (['xxx.yyy'], True, False),
         (['xxx.yyy', 'account.read'], True, True), (['xxx.yyy', 'account.read'], False, False),
     ])
-    @mark.focus
+    # @mark.focus
     async def test_has(self, account: Account, group_fixture_data, args, partials, out):
         assert await account.has(*args, partials=partials) == out
 

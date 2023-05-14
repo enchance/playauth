@@ -25,7 +25,7 @@ class AccountMod(DTMixin):
     is_banned = f.BooleanField(default=False)
     options = f.JSONField(default=s.DEFAULT_ACCOUNT_OPTIONS)
     permissions = ArrayField('text', null=True)
-    role = f.OneToOneField('models.Role', related_name='roleaccounts')
+    role = f.ForeignKeyField('models.Role', related_name='roleaccounts', null=True)
 
     # groups = f.ManyToManyField('models.Group', related_name='groupaccounts',
     #                            through='auth_xaccountgroups',

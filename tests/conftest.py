@@ -71,13 +71,13 @@ WHERE pg_stat_activity.datname = '{}' AND pid <> pg_backend_pid();
 
 @pytest.fixture(scope='module')
 async def account(initdb):
-    account = await Account.get_or_none(email=list(VERIFIED_EMAIL_SET)[0]).prefetch_related('groups')
+    account = await Account.get_or_none(email=list(VERIFIED_EMAIL_SET)[0]).select_related('role')
     return account
 
 
 @pytest.fixture(scope='module')
 async def superuser(initdb):
-    account = await Account.get_or_none(email=SUPER_EMAIL).prefetch_related('groups')
+    account = await Account.get_or_none(email=SUPER_EMAIL).select_related('role')
     return account
 
 

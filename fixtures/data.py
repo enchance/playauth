@@ -32,6 +32,6 @@ GROUP_FIXTURES_PROD = {}
 
 baseroles = {'AccountGroup', 'UploadGroup'}
 ROLE_FIXTURES = {
-    'Admin': {*baseroles, 'AdminGroup'},
-    'Starter': baseroles,
+    'admin': {*baseroles, 'AdminGroup'},
+    'starter': baseroles,
 }

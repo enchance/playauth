@@ -12,13 +12,14 @@ async def upgrade(db: BaseDBAsyncClient) -> str:
 CREATE TABLE IF NOT EXISTS "auth_group" (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "name" VARCHAR(20) NOT NULL UNIQUE,
-    "description" VARCHAR(199) NOT NULL,
+    "description" VARCHAR(199) NOT NULL  DEFAULT '',
     "permissions" text[]
 );
 CREATE TABLE IF NOT EXISTS "auth_role" (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "name" VARCHAR(20) NOT NULL UNIQUE,
-    "permissions" text[]
+    "description" VARCHAR(199) NOT NULL  DEFAULT '',
+    "groups" text[]
 );
 CREATE TABLE IF NOT EXISTS "auth_account" (
     "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
@@ -35,14 +36,10 @@ CREATE TABLE IF NOT EXISTS "auth_account" (
     "is_verified" BOOL NOT NULL  DEFAULT False,
     "id" UUID NOT NULL  PRIMARY KEY,
     "deleted_by_id" UUID REFERENCES "auth_account" ("id") ON DELETE CASCADE,
-    "role_id" INT NOT NULL UNIQUE REFERENCES "auth_role" ("id") ON DELETE CASCADE
+    "role_id" INT REFERENCES "auth_role" ("id") ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS "idx_auth_accoun_deleted_112596" ON "auth_account" ("deleted_at");
-CREATE INDEX IF NOT EXISTS "idx_auth_accoun_email_3074e7" ON "auth_account" ("email");
-CREATE TABLE IF NOT EXISTS "auth_xaccountgroups" (
-    "account_id" UUID NOT NULL REFERENCES "auth_account" ("id") ON DELETE CASCADE,
-    "group_id" INT NOT NULL REFERENCES "auth_group" ("id") ON DELETE CASCADE
-);"""
+CREATE INDEX IF NOT EXISTS "idx_auth_accoun_email_3074e7" ON "auth_account" ("email");"""
 
 
 async def downgrade(db: BaseDBAsyncClient) -> str:
