@@ -48,7 +48,7 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
     
     
     @property
-    async def groupset(self) -> set[str]:
+    async def groups(self) -> set[str]:
         """Get collated group names of user."""
         cachekey = s.redis.ACCOUNT_GROUPS.format(self.id)
 
@@ -66,12 +66,13 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
 
 
     @property
-    async def permissionset(self) -> set[str]:
+    async def permissions(self) -> set[str]:
         """Get collated permissions of user."""
+        # TODO: Does not include custom perms
 
         async def _cachedata() -> set[str]:        # noqa
             set_ = set()
-            for name in await self.groupset:
+            for name in await self.groups:
                 cachekey = s.redis.GROUP_PERMISSIONS.format(name)
                 cached_data = red.get(cachekey, set())
                 set_ = set_.union(cached_data)
@@ -79,7 +80,7 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
 
         async def _dbdata() -> set[str]:
             set_ = set()
-            groupset = await self.groupset
+            groupset = await self.groups
             groups = await Group.filter(name__in=groupset)
             for i in groups:
                 cachekey = s.redis.GROUP_PERMISSIONS.format(i.name)
@@ -122,12 +123,12 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
                 groupset.add(i)
         
         if permset:
-            permdata = await self.permissionset
+            permdata = await self.permissions
             shared = permset.intersection(permdata)
             hits += len(shared)
 
         if groupset:
-            groupdata = await self.groupset
+            groupdata = await self.groups
             shared = groupset.intersection(groupdata)
             hits += len(shared)
             

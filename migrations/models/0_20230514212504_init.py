@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS "auth_account" (
     "display" VARCHAR(199) NOT NULL,
     "is_banned" BOOL NOT NULL  DEFAULT False,
     "options" JSONB NOT NULL,
-    "permissions" text[],
+    "perms" text[],
     "email" VARCHAR(255) NOT NULL UNIQUE,
     "hashed_password" VARCHAR(1024) NOT NULL,
     "is_active" BOOL NOT NULL  DEFAULT True,

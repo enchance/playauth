@@ -69,33 +69,33 @@ class TestAuth:
             
     
     # @mark.focus
-    async def test_groupset(self, account: Account):
+    async def test_groups(self, account: Account):
         cachekey = s.redis.ACCOUNT_GROUPS.format(account.id)
         red.delete(cachekey)
 
         start = time.time()                                 # noqa
-        dbdata = await account.groupset
+        dbdata = await account.groups
         dbdur = time.time() - start
 
         start = time.time()
-        cachedata = await account.groupset
+        cachedata = await account.groups
         cachedur = time.time() - start
 
         assert dbdur > cachedur
         assert Counter(dbdata) == Counter(cachedata)
         
     
-    @mark.focus
-    async def test_permissionset(self, account: Account):
-        for name in await account.groupset:
+    # @mark.focus
+    async def test_permissions(self, account: Account):
+        for name in await account.groups:
             red.delete(s.redis.GROUP_PERMISSIONS.format(name))
         
         start = time.time()                                 # noqa
-        dbdata = await account.permissionset
+        dbdata = await account.permissions
         dbdur = time.time() - start
 
         start = time.time()
-        cachedata = await account.permissionset
+        cachedata = await account.permissions
         cachedur = time.time() - start
 
         assert dbdur > cachedur
