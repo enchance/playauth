@@ -27,9 +27,9 @@ class AccountMod(DTMixin):
     permissions = ArrayField('text', null=True)
     role = f.OneToOneField('models.Role', related_name='roleaccounts')
 
-    groups = f.ManyToManyField('models.Group', related_name='groupaccounts',
-                               through='auth_xaccountgroups',
-                               backward_key='account_id', forward_key='group_id')
+    # groups = f.ManyToManyField('models.Group', related_name='groupaccounts',
+    #                            through='auth_xaccountgroups',
+    #                            backward_key='account_id', forward_key='group_id')
     
     # # OAuth
     # oauth_id: str = f.CharField(null=True, max_length=255)
@@ -44,7 +44,7 @@ class AccountMod(DTMixin):
     
 class GroupMod:
     name = f.CharField(max_length=20, unique=True)
-    description = f.CharField(max_length=199)
+    description = f.CharField(max_length=199, default='')
     permissions = ArrayField('text', null=True)
 
     def __repr__(self):
@@ -53,7 +53,8 @@ class GroupMod:
 
 class RoleMod:
     name = f.CharField(max_length=20, unique=True)
-    permissions = ArrayField('text', null=True)
+    description = f.CharField(max_length=199, default='')
+    groups = ArrayField('text', null=True)
 
     def __repr__(self):
         return modstr(self, 'name')

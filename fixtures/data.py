@@ -28,3 +28,10 @@ GROUP_FIXTURES_DEV = {
 }
 
 GROUP_FIXTURES_PROD = {}
+
+
+baseroles = {'AccountGroup', 'UploadGroup'}
+ROLE_FIXTURES = {
+    'Admin': {*baseroles, 'AdminGroup'},
+    'Starter': baseroles,
+}
