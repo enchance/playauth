@@ -1,10 +1,12 @@
+from __future__ import annotations
 import uuid
 from tortoise import models
 from tortoise.exceptions import OperationalError
 from fastapi_users_tortoise import TortoiseUserDatabase, TortoiseBaseUserAccountModelUUID
+from fastapi.exceptions import HTTPException
 from redis.exceptions import RedisError
 
-from app import red, settings as s, ic
+from app import red, settings as s, ic, PermissionsException
 from .dbmods import *
 
 
@@ -35,7 +37,13 @@ class Group(GroupMod, models.Model):
     #
     #     dataset = _cachedata() or _dbdata()
     #     return dataset
-    
+
+
+class Role(RoleMod, models.Model):
+    class Meta:
+        table = 'auth_role'
+        ordering = ['name']
+        
     
 class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
     class Meta:
@@ -137,17 +145,21 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         return hits == len(args)
     
     
-    # # TESTME: Untested
-    # async def attach_group(self, group: Group) -> bool:
-    #     try:
-    #         if self.has('group.attach'):
-    #             await self.groups.add(group)
-    #         return True
-    #     except OperationalError:
-    #         return False
-    
-    
-class Role(RoleMod, models.Model):
-    class Meta:
-        table = 'auth_role'
-        ordering = ['name']
+    # TESTME: Untested
+    async def change_role(self, account: Account, role: Role):
+        """
+        Change the role of an account. Cannot be used to make admin accounts.
+        :param account:     Account to change
+        :param role:        New role
+        :return:            None
+        :raises             PermissionException
+        """
+        if not self.has('role.update') or self.id == account.id:
+            raise PermissionsException()
+        
+        if account.role == role or role.name == 'admin':
+            return
+        
+        account.role = role
+        await account.save(update_fields=['role_id'])
+        

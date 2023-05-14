@@ -12,7 +12,8 @@ hard_delete = ['hard-delete']
 GROUP_FIXTURES_DEV = {
     'AdminGroup': {
         'description': 'Not sure what you are yet',
-        'group': attach,
+        'role': ru,
+        'perms': attach
     },
     'AccountGroup': {
         'description': 'Account management',

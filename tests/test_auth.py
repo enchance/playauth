@@ -116,9 +116,9 @@ class TestAuth:
     
     @mark.parametrize('args, partials, out', [
         (['AccountGroup'], True, True), (['UploadGroup'], True, True), (['AdminGroup'], True, False),
-        (['account.read'], True, True), (['group.attach'], True, False),
-        (['account.read', 'group.attach'], True, True), (['group.attach', 'account.read'], True, True),
-        (['account.read', 'group.attach'], False, False), (['group.attach', 'account.read'], False, False),
+        (['account.read'], True, True), (['role.read'], True, False),
+        (['account.read', 'role.read'], True, True), (['role.read', 'account.read'], True, True),
+        (['account.read', 'role.read'], False, False), (['role.read', 'account.read'], False, False),
         (['AccountGroup', 'account.read'], True, True),
         (['AdminGroup', 'account.read'], True, True), (['account.read', 'AdminGroup'], True, True),
         (['AdminGroup', 'account.read'], False, False),
