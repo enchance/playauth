@@ -21,7 +21,6 @@ async def seed_accounts() -> list[str]:
     password = 'pass123'        # noqa
     
     current_emails = await Account.all().values_list('email', flat=True)
-    default_groups = await Group.filter(name__in=s.DEFAULT_GROUPS).only('id', 'name')
     admin_role = await Role.get_or_none(name='admin')
     starter_role = await Role.get_or_none(name='starter')
     
@@ -34,14 +33,14 @@ async def seed_accounts() -> list[str]:
         await acct.save(update_fields=['role_id'])
     
     # Super users
-    dataset = {SUPER_EMAIL}
+    dataset = {SUPER_EMAIL}     # noqa
     createset = dataset - set(current_emails)
     if createset:
         for email in createset:
             if account := await AuthHelper.create_user(email=email, password=password, is_superuser=True,
                                                        is_verified=True):
-                _cache_groups(account.id, set(account.role.groups))
                 await _set_role(account, admin_role)
+                _cache_groups(account.id, set(account.role.groups))
                 total += 1
     
     # Verified users
@@ -50,7 +49,6 @@ async def seed_accounts() -> list[str]:
         for email in createset:
             if account := await AuthHelper.create_user(email=email, password=password, is_verified=True):
                 _cache_groups(account.id, set(account.role.groups))
-                await _set_role(account, starter_role)
                 total += 1
                 
     # Unverified users
@@ -60,7 +58,6 @@ async def seed_accounts() -> list[str]:
         for i in createset:
             if account := await AuthHelper.create_user(email=i, password=password):
                 _cache_groups(account.id, set(account.role.groups))
-                await _set_role(account, starter_role)
                 total += 1
     
     dataset = {INACTIVE_VERIFIED_EMAIL}
@@ -70,7 +67,6 @@ async def seed_accounts() -> list[str]:
             if account := await AuthHelper.create_user(email=i, password=password,is_verified=True,
                                                        is_active=False):
                 _cache_groups(account.id, set(account.role.groups))
-                await _set_role(account, starter_role)
                 total += 1
     
     dataset = {INACTIVE_UNVERIFIED_EMAIL}
@@ -79,7 +75,6 @@ async def seed_accounts() -> list[str]:
         for i in createset:
             if account := await AuthHelper.create_user(email=i, password=password, is_active=False):
                 _cache_groups(account.id, set(account.role.groups))
-                await _set_role(account, starter_role)
                 total += 1
     
     dataset = {BANNED_EMAIL}                                                                        # noqa
@@ -89,7 +84,6 @@ async def seed_accounts() -> list[str]:
             if account := await AuthHelper.create_user(email=i, password=password, is_verified=True,
                                                        is_banned=True):
                 _cache_groups(account.id, set(account.role.groups))
-                await _set_role(account, starter_role)
                 total += 1
     
     return [f'ACCOUNTS_CREATED - {total} new']

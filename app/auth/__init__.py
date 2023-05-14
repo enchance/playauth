@@ -107,10 +107,12 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
     
     # TESTME: Untested
     async def on_after_register(self, account: Account, request: Optional[Request] = None):
-        # default_groups = await Group.filter(name__in=s.DEFAULT_GROUPS).only('id')
+        # ic(f"User {account.id} has registered [{account.email}].")
+        
         if starter_role := await Role.get_or_none(name='starter'):
             account.role = starter_role
             await account.save(update_fields=['role_id'])
+    
     
     # TESTME: Untested
     async def on_after_login(self, account: Account, request: Optional[Request] = None,

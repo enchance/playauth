@@ -61,12 +61,24 @@ class TestAuth:
             
 
     # @mark.focus
-    async def test_cached_group_perms(self, initdb, group_fixture_data):
+    async def test_cache_group_permissions(self, initdb, group_fixture_data):
         for name in group_fixture_data['groups']:
             cachekey = s.redis.GROUP_PERMISSIONS.format(name)
             cached_perms = red.get(cachekey, set())
             assert Counter(cached_perms) == Counter(group_fixture_data[name])
             
+    
+    # @mark.focus
+    async def test_cached_account_groups(self, initdb):
+        account = await Account.get(email=UNVERIFIED_EMAIL).only('id').select_related('role')
+        superuser = await Account.get(email=SUPER_EMAIL).only('id').select_related('role')
+        
+        cachekey = s.redis.ACCOUNT_GROUPS.format(account.id)
+        assert Counter(account.role.groups) == Counter(list(red.get(cachekey)))
+
+        cachekey = s.redis.ACCOUNT_GROUPS.format(superuser.id)
+        assert Counter(superuser.role.groups) == Counter(list(red.get(cachekey)))
+        
     
     # @mark.focus
     async def test_groups(self, account: Account):
