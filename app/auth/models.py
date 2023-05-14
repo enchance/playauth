@@ -5,7 +5,7 @@ from fastapi_users_tortoise import TortoiseUserDatabase, TortoiseBaseUserAccount
 from redis.exceptions import RedisError
 
 from app import red, settings as s, ic
-from .dbmods import AccountMod, GroupMod
+from .dbmods import *
 
 
 class Group(GroupMod, models.Model):
@@ -143,4 +143,9 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
     #         return True
     #     except OperationalError:
     #         return False
-        
+    
+    
+class Role(RoleMod, models.Model):
+    class Meta:
+        table = 'auth_role'
+        ordering = ['name']
