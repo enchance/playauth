@@ -19,6 +19,7 @@ python-decouple = "^3.8"
 limeutils = "^0.2.12"
 fastapi-users = "^11.0.0"
 pytest-asyncio = "^0.21.0"
+google-auth = "^2.18.1"
 
 
 
