@@ -24,6 +24,11 @@ TOKEN_AUD = f'{s.APPCODE}:auth'
 class AuthHelper:
     @staticmethod
     def format_expiresiso(expiresiso: str) -> str:
+        """
+        Format a datetime in iso format to a string for use in cookie generation.
+        :param expiresiso:  str datetime in iso format
+        :return:            str fit for a cookie
+        """
         expiry = datetime.fromisoformat(expiresiso).strftime("%a, %d %b %Y %H:%M:%S GMT")
         return expiry
     
@@ -123,9 +128,8 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
         # // TODO: Save cachedata to cache
         response.set_cookie(**cookiedata)
 
-        datamap = AuthHelper.parse_response_body(response)
-        access_token = datamap.get('access_token')
-        # TODO: Save access_token to cache
+        # datamap = AuthHelper.parse_response_body(response)
+        # access_token = datamap.get('access_token')
         # ic(f"User {user.email} logged in. Refresh token: {refresh_token}.")
 
 async def get_user_db():

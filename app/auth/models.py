@@ -56,6 +56,17 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
     
     
     @property
+    async def custom_perms(self) -> set[str]:
+        dataset = set()
+        
+        async def _dbdata() -> set[str]:
+            # TODO: Get from db
+            return set()
+        
+        return dataset
+    
+    
+    @property
     async def groups(self) -> set[str]:
         """Get collated group names of user."""
         cachekey = s.redis.ACCOUNT_GROUPS.format(self.id)
@@ -75,8 +86,7 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
 
     @property
     async def permissions(self) -> set[str]:
-        """Get collated permissions of user."""
-        # TODO: Does not include custom perms
+        """Get collated permissions of user from their groups."""
 
         async def _cachedata() -> set[str]:        # noqa
             set_ = set()
@@ -103,6 +113,8 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
     async def has(self, *args: str, partials: bool = True) -> bool:
         """
         Check if the account has the following permission/s and/or group/s.
+        This is where any custom permissions are applied since only group perms are saved to cache
+        and not account perms. This makes it easier to manage and with less redis keys.
         Example:
             account.has('foo.bar')
             account.has('FooGroup')
@@ -118,12 +130,15 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         :return:            bool
         """
         hits = 0
+        permset = set()
+        groupset = set()
+        
+        def _custom_account_perms() -> set[str]:
+            return self.perms or set()
         
         if not args:
             return False
         
-        permset = set()
-        groupset = set()
         for i in args:
             if len(i.split('.')) > 1:
                 permset.add(i)
@@ -132,12 +147,21 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         
         if permset:
             permdata = await self.permissions
-            shared = permset.intersection(permdata)
+
+            if custom_perms := _custom_account_perms():
+                for i in custom_perms:
+                    i = i.strip()
+                    if i[0] == '-':
+                        permdata = permdata - set(i[1:])
+                    else:
+                        permdata = permdata | set(i)
+            
+            shared = permset & permdata
             hits += len(shared)
 
         if groupset:
             groupdata = await self.groups
-            shared = groupset.intersection(groupdata)
+            shared = groupset & groupdata
             hits += len(shared)
             
         if partials:

@@ -10,8 +10,16 @@ from app.auth import Account, Group
 @mark.dev
 async def test_dev(initdb):
     a = {2, 3, 4, 5}
-    # account = await Account.get_or_none(email='verified@gmail.com').select_related('role')
+    account = await Account.get_or_none(email='verified@gmail.com').select_related('role')
+    # superuser = await Account.get(email='super@gmail.com').select_related('role')
     # groupset = {i.name for i in account.groups}
+    
+    # custom_perms = account.perms or []
+    # ic(type(custom_perms), custom_perms)
+    # account.perms = ['aaa.bbb']
+    # await account.save(update_fields=['perms'])
+    # custom_perms = account.perms
+    # ic(type(custom_perms), custom_perms)
 
     # groups = await Group.filter(name__in=['AdminGroup', 'AccountGroup']).values('id', 'name')
     # ic(groups)
@@ -28,6 +36,5 @@ async def test_dev(initdb):
 
     # ic(type(accounts), accounts)
     
-    account = await Account.get(email='super@gmail.com').select_related('role')
     # await account.fetch_related('groups')
     # ic(account.role)
