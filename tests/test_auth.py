@@ -3,7 +3,7 @@ from collections import Counter
 from pytest import mark
 from tortoise.query_utils import Prefetch
 
-from app import ic, settings as s, red
+from app import ic, settings as s, red, exceptions as x
 from app.auth import Account, Group, Role
 from fixtures import SUPER_EMAIL, VERIFIED_EMAIL_SET, UNVERIFIED_EMAIL, INACTIVE_VERIFIED_EMAIL, \
     INACTIVE_UNVERIFIED_EMAIL, BANNED_EMAIL
@@ -136,6 +136,22 @@ class TestAuth:
     async def test_custom_perms(self, account: Account):
         assert await account.has('perms.attach')
         assert not await account.has('account.update')
+        
+    @mark.focus
+    async def test_change_role(self, account: Account, superuser: Account):
+        starter_role = await Role.get_or_none(name='starter')
+        admin_role = await Role.get_or_none(name='admin')
+        permset = {'avatar.update', 'avatar.read', 'perms.attach', 'account.read'}
+        
+        assert await account.permissions == permset
+        assert account.role == starter_role
+        
+        with pytest.raises(x.PermissionsException):
+            await account.change_role(account, admin_role)
+            
+        assert await superuser.change_role(account, admin_role) is None
+        assert await account.permissions == permset
+        assert account.role == starter_role
 
 class TestGroup:
     async def test_groups(self, initdb):

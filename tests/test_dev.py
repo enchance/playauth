@@ -14,6 +14,8 @@ async def test_dev(initdb):
     # superuser = await Account.get(email='super@gmail.com').select_related('role')
     # groupset = {i.name for i in account.groups}
     
+    # ic({1, 2} == {2, 1})
+    
     # custom_perms = account.perms or []
     # ic(type(custom_perms), custom_perms)
     # account.perms = {'aaa.bbb'}

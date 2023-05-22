@@ -162,7 +162,6 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         return hits == len(args)
     
     
-    # TESTME: Untested
     async def change_role(self, account: Account, role: Role):
         """
         Change the role of an account. Cannot be used to make admin accounts.
@@ -171,12 +170,17 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         :return:            None
         :raises             PermissionException
         """
-        if not self.has('role.update') or self.id == account.id:
+        if not await self.has('role.update') or self.id == account.id:
             raise PermissionsException()
-        
+
+        # You can't create another admin using the app. Edit the db manually.
         if account.role == role or role.name == 'admin':
             return
         
         account.role = role
         await account.save(update_fields=['role_id'])
+        
+        # Delete the cache key so it gets repopulated next time it's needed
+        cachekey = s.redis.ACCOUNT_GROUPS.format(account.id)
+        red.delete(cachekey)
         
