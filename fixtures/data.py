@@ -8,7 +8,7 @@ attach = ['attach', 'detach']
 hard_delete = ['hard-delete']
 
 
-
+# DO NOT CHANGE ANYTHING HERE OR SOME TESTS WOULD FAIL
 GROUP_FIXTURES_DEV = {
     'AdminGroup': {
         'description': 'Not sure what you are yet',

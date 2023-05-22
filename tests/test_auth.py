@@ -131,7 +131,11 @@ class TestAuth:
     # @mark.focus
     async def test_has(self, account: Account, group_fixture_data, args, partials, out):
         assert await account.has(*args, partials=partials) == out
-
+        
+    # @mark.focus
+    async def test_custom_perms(self, account: Account):
+        assert await account.has('perms.attach')
+        assert not await account.has('account.update')
 
 class TestGroup:
     async def test_groups(self, initdb):

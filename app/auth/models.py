@@ -53,18 +53,7 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
     # TESTME: Untested
     def get_options(self) -> dict:
         return self.options
-    
-    
-    @property
-    async def custom_perms(self) -> set[str]:
-        dataset = set()
-        
-        async def _dbdata() -> set[str]:
-            # TODO: Get from db
-            return set()
-        
-        return dataset
-    
+
     
     @property
     async def groups(self) -> set[str]:
@@ -88,12 +77,26 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
     async def permissions(self) -> set[str]:
         """Get collated permissions of user from their groups."""
 
+        def _custom_perms(dataset: set[str]) -> set[str]:       # noqa
+            """Apply custom perms to the entire list of perms."""
+            try:
+                if custom_perms := self.perms or set():
+                    for i in custom_perms:
+                        i = i.strip()
+                        if i[0] == '-':
+                            dataset = dataset - {i[1:]}      # noqa
+                        else:
+                            dataset = dataset | {i}          # noqa
+            except OperationalError:
+                pass
+            return dataset
+
         async def _cachedata() -> set[str]:        # noqa
             set_ = set()
             for name in await self.groups:
                 cachekey = s.redis.GROUP_PERMISSIONS.format(name)
                 cached_data = red.get(cachekey, set())
-                set_ = set_.union(cached_data)
+                set_ = set_ | cached_data
             return set_
 
         async def _dbdata() -> set[str]:
@@ -106,7 +109,9 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
                 set_ = set_.union(set(i.permissions))      # noqa
             return set_
 
+
         dataset = await _cachedata() or await _dbdata()
+        dataset = _custom_perms(dataset)
         return dataset
 
     
@@ -133,9 +138,6 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         permset = set()
         groupset = set()
         
-        def _custom_account_perms() -> set[str]:
-            return self.perms or set()
-        
         if not args:
             return False
         
@@ -147,15 +149,6 @@ class Account(AccountMod, TortoiseBaseUserAccountModelUUID):
         
         if permset:
             permdata = await self.permissions
-
-            if custom_perms := _custom_account_perms():
-                for i in custom_perms:
-                    i = i.strip()
-                    if i[0] == '-':
-                        permdata = permdata - set(i[1:])
-                    else:
-                        permdata = permdata | set(i)
-            
             shared = permset & permdata
             hits += len(shared)
 

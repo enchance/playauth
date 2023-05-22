@@ -8,7 +8,7 @@ from .data import *
 
 
 SUPER_EMAIL = 'super@gmail.com'
-VERIFIED_EMAIL_SET = {'verified@gmail.com', 'ver2@app.co', 'ver3@app.co', 'ver4@app.co'}
+VERIFIED_EMAIL_SET = {'verified@gmail.com', 'ver2@app.co', 'ver3@app.co', 'ver4@app.co'}    # Don't change order
 UNVERIFIED_EMAIL = 'unverified@gmail.com'
 INACTIVE_VERIFIED_EMAIL = 'inactive_verified@gmail.com'
 INACTIVE_UNVERIFIED_EMAIL = 'inactive_unverified@gmail.com'
@@ -50,6 +50,12 @@ async def seed_accounts() -> list[str]:
             if account := await AuthHelper.create_user(email=email, password=password, is_verified=True):
                 _cache_groups(account.id, set(account.role.groups))
                 total += 1
+                
+                # Custom perms
+                if account.email == list(VERIFIED_EMAIL_SET)[0]:
+                    account.perms = {'perms.attach', '-account.update'}
+                    await account.save(update_fields=['perms'])
+                
                 
     # Unverified users
     dataset = {UNVERIFIED_EMAIL}

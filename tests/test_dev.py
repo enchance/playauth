@@ -16,7 +16,7 @@ async def test_dev(initdb):
     
     # custom_perms = account.perms or []
     # ic(type(custom_perms), custom_perms)
-    # account.perms = ['aaa.bbb']
+    # account.perms = {'aaa.bbb'}
     # await account.save(update_fields=['perms'])
     # custom_perms = account.perms
     # ic(type(custom_perms), custom_perms)
