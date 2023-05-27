@@ -109,12 +109,12 @@ def mock_login(client):
     return mock
 
 
-@pytest.fixture
-def mock_token(client):
-    async def mock(refresh_token, access_token):
-        cookie = dict(refresh_token=refresh_token)
-        data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', json=access_token, cookies=cookie)
-        data = data.json()
-        ic(data)
-        # return data['access_token'], data['token_type']
-    return mock
+# @pytest.fixture
+# def mock_token(client):
+#     async def mock(refresh_token, access_token):
+#         cookie = dict(refresh_token=refresh_token)
+#         data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', json=access_token, cookies=cookie)
+#         data = data.json()
+#         ic(data)
+#         # return data['access_token'], data['token_type']
+#     return mock

@@ -20,3 +20,8 @@ class AppException(HTTPException):
 class PermissionsException(AppException):
     code = 403
     message = 'YOU_SHALL_NOT_PASS'
+
+
+class InvalidToken(AppException):
+    code = 403
+    message = 'INVALID_TOKEN'

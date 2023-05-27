@@ -1,8 +1,11 @@
 import uuid, secrets, pytz, math, time, ast
+from typing import Annotated
 from contextlib import  asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import Request, Depends, Response
+from fastapi import Request, Depends, Response, Cookie, APIRouter, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi_users.authentication.transport.bearer import BearerResponse
 from fastapi_users import UUIDIDMixin, BaseUserManager, FastAPIUsers
 from fastapi_users.authentication import (
     JWTStrategy, BearerTransport, AuthenticationBackend
@@ -13,6 +16,7 @@ from app import settings as s, ic
 # from .models import *
 from .models import *
 from .schemas import *
+from ..exceptions import InvalidToken
 
 
 RESET_PASSWORD_TOKEN_AUD = f'{s.APPCODE}:reset'
@@ -154,3 +158,65 @@ get_user_manager_context = asynccontextmanager(get_user_manager)
 # Helpers
 current_user = fusers.current_user(active=True, verified=True)
 super_user = fusers.current_user(active=True, verified=True, superuser=True)
+
+
+
+authrouter = APIRouter()
+
+@authrouter.get('/private', response_model=AccountRes)
+async def private(account: Account = Depends(current_user)):
+    # ic(account)
+    # ic(account.get_options())
+    # group = await Group.get_or_none(name='AccountGroup').only('id', 'name')
+    # ic(group)
+    # ic(group.foo())
+    return account
+
+
+@authrouter.post(f"{s.JWT_AUTH_PREFIX}/refresh")
+async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_strategy)],
+                               refresh_token: Annotated[str, Cookie()] = None, user=Depends(current_user)):
+    """
+    Generates a new access_token if the refresh_token is still fresh.
+    A missing refresh_token would warrant the user to login again.
+    Refresh toknes are always regenerated but the expires date may remain the same.
+    :param strategy:        JWT strat
+    :param refresh_token:   Current refresh_token
+    :param user:            Account
+    :return:                str, New access_token
+    """
+    # https://github.com/fastapi-users/fastapi-users/discussions/350
+    # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
+    
+    if refresh_token is None:
+        raise InvalidToken()
+    
+    if cached_expiresiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
+        diff = AuthHelper.expiry_diff_minutes(cached_expiresiso)
+        if diff <= 0:
+            # // TODO: Delete any existing refresh_tokens in cache
+            ic(f'LOGOUT ACCOUNT: {diff} mins')
+            raise Exception()                                                                   # Logout
+        if diff <= s.REFRESH_TOKEN_REGENERATE / 60:
+            ic(f'FULL REGENERATION: {diff} mins')
+            cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate expires
+        else:
+            ic(f'PARTIAL REGENERATION: {diff} mins')
+            cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=cached_expiresiso)      # Retain expires
+    else:
+        raise InvalidToken()
+    # try:
+    # except Exception:
+    #     # Frontend sends user to login
+    #     raise HTTPException(status_code=401, detail='ACCESS_REVOKED')
+    
+    access_token = await strategy.write_token(user)
+    content = BearerResponse(access_token=access_token, token_type='bearer')
+    response = JSONResponse(content.dict())
+    cachedata = cookiedata.pop('cachedata')
+    # // TODO: Save cachedata to cache
+    response.set_cookie(**cookiedata)
+    return response
+    
+    # return await bearer_transport.get_login_response(token)
+    # return await auth_backend.login(strategy, user)

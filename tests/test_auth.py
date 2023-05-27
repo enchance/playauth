@@ -1,17 +1,20 @@
-import datetime
-
-import pytest, time
+import pytest, time, pytz
+from datetime import datetime, timedelta
 from collections import Counter
 from pytest import mark
 from tortoise.query_utils import Prefetch
 from freezegun import freeze_time
+from fastapi_users.jwt import decode_jwt
 
 from app import ic, settings as s, red, exceptions as x
-from app.auth import Account, Group, Role
+from app.auth import Account, Group, Role, get_jwt_strategy, UserManager, TOKEN_AUD, AuthHelper
 from fixtures import SUPER_EMAIL, VERIFIED_EMAIL_SET, UNVERIFIED_EMAIL, INACTIVE_VERIFIED_EMAIL, \
     INACTIVE_UNVERIFIED_EMAIL, FIXTURE_PASSWORD
 
 
+
+verified_email = list(VERIFIED_EMAIL_SET)[0]
+login_user_dict = dict(username=verified_email, password=FIXTURE_PASSWORD)
 
 class TestAuth:
     # @mark.focus
@@ -129,7 +132,7 @@ class TestAuth:
         assert await account.has('perms.attach')
         assert not await account.has('account.update')
         
-    @mark.focus
+    # @mark.focus
     async def test_change_role(self, account: Account, superuser: Account):
         starter_role = await Role.get_or_none(name='starter')
         admin_role = await Role.get_or_none(name='admin')
@@ -153,7 +156,7 @@ class TestAuthIntegration:
             data = await client.post('/auth/login',
                                      data=dict(username=i, password=FIXTURE_PASSWORD))
             data = data.json()
-            assert Counter(['access_token', 'token_type']) == Counter(data.keys())
+            assert data.get('access_token')
             assert data.get('token_type') == 'bearer'
         
         for i in {INACTIVE_VERIFIED_EMAIL, INACTIVE_UNVERIFIED_EMAIL}:
@@ -174,24 +177,28 @@ class TestAuthIntegration:
         assert data.get('token_type') == 'bearer'
 
     # @mark.focus
-    # async def test_access_token(self, mock_login, mock_token):
-    #     with freeze_time('2099-06-01 00:00:00') as ft:
-    #         # await _clear_authtoken()
-    #         _, atoken1, _type1 = await mock_login()
-    #         hashes = {atoken1}
-    #         ft.move_to('2022-06-01 00:00:01')
-    #         _, atoken2, _type2 = await mock_login()
-    #         hashes.add(atoken2)
-    #         assert atoken1
-    #         assert _type1 == 'bearer' and _type2 == 'bearer'
-    #         assert len(hashes) == 2
-    
-        # with freeze_time('2099-06-01 00:00:00') as ft:
-        #     # await _clear_authtoken()
-        #     refresh_token, access_token, _ = await mock_login()
-        #     hashes = {access_token}
-        #
-        #     ft.move_to('2022-06-01 00:00:01')
+    async def test_access_token(self, client, mock_login):
+        starter_dt = datetime(2099, 6, 1)
+        
+        # Logging in will always give you a new access_token
+        with freeze_time(starter_dt) as ft:
+            _, atoken1, _type1 = await mock_login()
+            hashes = {atoken1}
+            data = decode_jwt(atoken1, s.SECRET_KEY, [TOKEN_AUD])
+            token_exp = datetime.utcfromtimestamp(data['exp'])
+            assert token_exp == datetime.now() + timedelta(seconds=s.ACCESS_TOKEN_TTL)
+            assert _type1 == 'bearer'
+            # ic(datetime.utcfromtimestamp(exp).strftime('%Y-%m-%d %H:%M:%S'))
+            
+            ft.move_to('2022-06-01 00:00:01')
+            _, atoken2, _type2 = await mock_login()
+            hashes.add(atoken2)
+            data = decode_jwt(atoken2, s.SECRET_KEY, [TOKEN_AUD])
+            token_exp = datetime.utcfromtimestamp(data['exp'])
+            assert token_exp == datetime.now() + timedelta(seconds=s.ACCESS_TOKEN_TTL)
+            assert _type2 == 'bearer'
+            assert len(hashes) == 2
+
         #     await mock_token(refresh_token, access_token)
         #     # hashes.add(atoken)
         #     # assert _type == 'bearer'
@@ -239,31 +246,79 @@ class TestAuthIntegration:
         #         assert len(hashes) == 1
 
     # @mark.focus
-    # async def test_refresh_token(self, initdb, client, mock_login, mock_token):
-    #     # 1 secord before s.REFRESH_TOKEN_CUTOFF
-    #     with freeze_time('2099-06-01 00:00:00') as ft:
-    #         pass
-    #         # account = await Account.get(email=login_dict['username']).values('id')
-    #         # userid = account['id']
-    #         # await clear_refresh_token(userid)
-    #         refresh_token, access_token, _ = await mock_login()
-    #
-    #         ft.move_to('2099-06-01 00:00:01')
-    #         # await mock_token(client, refresh_token, access_token)
-    #         # authtoken, userid = await get_authtoken()
-    #         # rtoken_redis = await Account.fetch(userid, 'authtoken_token')
-    #         # assert rtoken_redis == refresh_token
-    #         # assert rtoken_redis == authtoken['refresh_token']
-    #         # ic(authtoken)
-    #
-    #         # ft.move_to('2022-06-02 21:59:59')
-    #         # await mock_token(client, refresh_token, access_token)
-    #         # authtoken, _ = await get_authtoken()
-    #         # rtoken_redis = await Account.fetch(userid, 'authtoken_token')
-    #         # assert rtoken_redis == refresh_token
-    #         # assert rtoken_redis == authtoken['refresh_token']
-    #         # # ic(authtoken)
+    async def test_restricted(self, account: Account, client, mock_login):
+        starter_dt = datetime(2099, 6, 1)
         
+        with freeze_time(starter_dt) as ft:
+            refresh_token, access_token, _ = await mock_login()
+            
+            headers = None
+            data = await client.get('/private', headers=headers)
+            assert data.status_code == 401
+            
+            headers = dict(authorization=access_token)
+            data = await client.get('/private', headers=headers)
+            assert data.status_code == 401
+            
+            # Fresh
+            headers = dict(authorization=f'bearer {access_token}')
+            data = await client.get('/private', headers=headers)
+            data = data.json()
+            assert data['email'] == verified_email
+            assert data['id'] == str(account.id)
+
+            # Exact exp
+            ft.move_to(starter_dt + timedelta(seconds=s.ACCESS_TOKEN_TTL))
+            data = await client.get('/private', headers=headers)
+            assert data.status_code == 401
+            
+            # 1 sec early exp
+            ft.move_to(starter_dt + timedelta(seconds=s.ACCESS_TOKEN_TTL) - timedelta(seconds=1))
+            data = await client.get('/private', headers=headers)
+            data = data.json()
+            assert data['email'] == verified_email
+            assert data['id'] == str(account.id)
+
+            # 1 sec late exp
+            ft.move_to(starter_dt + timedelta(seconds=s.ACCESS_TOKEN_TTL) + timedelta(seconds=1))
+            data = await client.get('/private', headers=headers)
+            assert data.status_code == 401
+            
+            
+    @mark.focus
+    async def test_refresh_access_token(self, client, mock_login):
+        starter_dt = datetime(2099, 6, 1)
+    
+        with freeze_time(starter_dt) as ft:
+            refresh_token, access_token, _ = await mock_login()
+            headers = dict(authorization=f'bearer {access_token}')
+            exp = starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL)
+            exp_str = AuthHelper.format_expiresiso(exp.isoformat())
+            cookie = dict(refresh_token=refresh_token)
+            
+            # Missing cookie
+            data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers)
+            data = data.json()
+            assert data['detail'] == 'INVALID_TOKEN'
+
+            # Partial regeneration
+            data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            data = data.json()
+            assert data['access_token']
+            assert data['token_type'] == 'bearer'
+
+            # # Exact exp
+            # # timedelta doesn't work since it gets the diff based on the cache
+            # ft.move_to(starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL))
+            # data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            # data = data.json()
+            # assert data['detail'] == 'Unauthorized'
+            #
+            # ft.move_to(starter_dt + timedelta(minutes=10))
+            # data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            # data = data.json()
+            # ic(data)
+
 
 class TestGroup:
     async def test_groups(self, initdb):

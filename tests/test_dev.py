@@ -1,5 +1,6 @@
 import pytest
 from pytest import mark
+from datetime import datetime, timedelta
 
 from app import ic
 from app.auth import Account, Group
@@ -13,6 +14,11 @@ async def test_dev(initdb):
     account = await Account.get_or_none(email='verified@gmail.com').select_related('role')
     # superuser = await Account.get(email='super@gmail.com').select_related('role')
     # groupset = {i.name for i in account.groups}
+    
+    # dt = datetime(2099, 6, 1)
+    # ic(str(dt))
+    # x = dt + timedelta(seconds=5) - timedelta(seconds=2)
+    # ic(str(x))
     
     # ic({1, 2} == {2, 1})
     
