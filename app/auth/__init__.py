@@ -52,17 +52,22 @@ class AuthHelper:
             return 0
     
     @staticmethod
-    async def fetch_cached_reftoken(token: str) -> str | None:
+    async def fetch_cached_reftoken(refresh_token: str) -> str:
         """
         Get the reftoken from cache. If there is no token then return None.
-        :param token:   refresh_token to search for
-        :return:        str | None
+        :param refresh_token:   refresh_token to search for
+        :return:                str, expiresiso of refresh_token
         """
         # // TODO: Get iso from cache
         # expiresiso = '2023-05-06T10:47:00.906700+00:00'
-        expiresiso = (datetime.now(tz=pytz.UTC) + timedelta(minutes=182)).isoformat()
-        # expiresiso = None
-        return expiresiso
+        # expiresiso = (datetime.now(tz=pytz.UTC) + timedelta(minutes=182)).isoformat()
+        # # expiresiso = None
+        # return expiresiso
+        cachekey = s.redis.REFRESH_TOKEN.format(refresh_token)
+        if _ := red.exists(cachekey):
+            d = red.get(cachekey)
+            return d['exp']
+        raise InvalidToken()
     
     @classmethod
     def refresh_cookie_generator(cls, *, expiresiso: Optional[str] = None, **kwargs) -> dict:
@@ -70,12 +75,13 @@ class AuthHelper:
         refresh_token = secrets.token_hex(nbytes=32)
         fallback_iso = (datetime.now(tz=pytz.UTC) + timedelta(seconds=s.REFRESH_TOKEN_TTL)).isoformat()
         
-        cachedata = dict(token=refresh_token, expiresiso=fallback_iso)
+        # data_dict = dict(expiresiso=fallback_iso)
         expires = cls.format_expiresiso(fallback_iso)
         try:
             if expiresiso:
                 if expires := cls.format_expiresiso(expiresiso):
-                    cachedata['expiresiso'] = expiresiso
+                    pass
+                    # data_dict['expiresiso'] = expiresiso
                 else:
                     raise ValueError()
         except (TypeError, ValueError):
@@ -88,7 +94,7 @@ class AuthHelper:
             'expires':  expires,
             'path':     s.JWT_AUTH_PREFIX,
             'domain':   s.SITEURL,
-            'cachedata': cachedata,
+            'expiresiso': expiresiso or fallback_iso,
             **kwargs,
         }
 
@@ -128,9 +134,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[Account, uuid.UUID]):
                              response: Optional[Response] = None):
         # Always generate a new refresh_token on login
         cookiedata = AuthHelper.refresh_cookie_generator()
-        cachedata = cookiedata.pop('cachedata')
-        # // TODO: Save cachedata to cache
+        expiresiso = cookiedata.pop('expiresiso')
         response.set_cookie(**cookiedata)
+        
+        cachekey = s.redis.REFRESH_TOKEN.format(cookiedata['value'])
+        red.set(cachekey, dict(uid=str(account.id), exp=expiresiso))
 
         # datamap = AuthHelper.parse_response_body(response)
         # access_token = datamap.get('access_token')
@@ -175,47 +183,51 @@ async def private(account: Account = Depends(current_user)):
 
 @authrouter.post(f"{s.JWT_AUTH_PREFIX}/refresh")
 async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_strategy)],
-                               refresh_token: Annotated[str, Cookie()] = None, user=Depends(current_user)):
+                               refresh_token: Annotated[str, Cookie()] = None,
+                               account: Account = Depends(current_user)):
     """
     Generates a new access_token if the refresh_token is still fresh.
     A missing refresh_token would warrant the user to login again.
     Refresh toknes are always regenerated but the expires date may remain the same.
+    :param account:         Account
     :param strategy:        JWT strat
     :param refresh_token:   Current refresh_token
-    :param user:            Account
     :return:                str, New access_token
     """
     # https://github.com/fastapi-users/fastapi-users/discussions/350
     # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
+    cachekey = s.redis.REFRESH_TOKEN.format(refresh_token)
     
     if refresh_token is None:
         raise InvalidToken()
     
-    if cached_expiresiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
-        diff = AuthHelper.expiry_diff_minutes(cached_expiresiso)
+    if expdateiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
+        diff = AuthHelper.expiry_diff_minutes(expdateiso)
         if diff <= 0:
-            # // TODO: Delete any existing refresh_tokens in cache
-            ic(f'LOGOUT ACCOUNT: {diff} mins')
-            raise Exception()                                                                   # Logout
+            # TESTME: Untested
+            red.delete(cachekey)
+            ic(f'LOGOUT: {diff} mins')
+            raise InvalidToken()                                                                   # Logout
         if diff <= s.REFRESH_TOKEN_REGENERATE / 60:
-            ic(f'FULL REGENERATION: {diff} mins')
+            # TESTME: Untested
+            ic(f'WINDOW REGENERATION: {diff} mins')
             cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate expires
         else:
-            ic(f'PARTIAL REGENERATION: {diff} mins')
-            cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=cached_expiresiso)      # Retain expires
+            # TESTME: Untested
+            ic(f'FORCED REGENERATION: {diff} mins')
+            cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=expdateiso)      # Retain expires
     else:
         raise InvalidToken()
-    # try:
-    # except Exception:
-    #     # Frontend sends user to login
-    #     raise HTTPException(status_code=401, detail='ACCESS_REVOKED')
     
-    access_token = await strategy.write_token(user)
+    access_token = await strategy.write_token(account)
     content = BearerResponse(access_token=access_token, token_type='bearer')
     response = JSONResponse(content.dict())
-    cachedata = cookiedata.pop('cachedata')
-    # // TODO: Save cachedata to cache
+    expiresiso = cookiedata.pop('expiresiso')
     response.set_cookie(**cookiedata)
+
+    cachekey = s.redis.REFRESH_TOKEN.format(cookiedata['value'])
+    red.set(cachekey, dict(uid=str(account.id), exp=expiresiso))
+    
     return response
     
     # return await bearer_transport.get_login_response(token)

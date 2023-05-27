@@ -5,7 +5,7 @@ from decouple import config
 class RedisKeys:
     GROUPS = 'app:groups'
     GROUP_PERMISSIONS = 'group:{}-permissions'
-    ACCOUNT_TOKEN = 'user:{}-token'
+    REFRESH_TOKEN = 'token:{}'
     ACCOUNT_GROUPS = 'user:{}-groups'
     # ACCOUNT_PERMISSIONS = 'user:{}-permissions'
 
