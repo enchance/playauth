@@ -22,7 +22,6 @@ class DTMixin:
 
 class AccountMod(DTMixin):
     display = f.CharField(max_length=199)
-    is_banned = f.BooleanField(default=False)
     options = f.JSONField(default=s.DEFAULT_ACCOUNT_OPTIONS)
     perms = ArrayField('text', null=True)
     role = f.ForeignKeyField('models.Role', related_name='roleaccounts', null=True)

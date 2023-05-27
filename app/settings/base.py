@@ -11,11 +11,13 @@ class RedisKeys:
 
 
 class BaseSettings:
+    SITENAME = 'Playauth'
     APPCODE = 'PLAY'
     ENV = config('ENV')
     TIMEZONE = 'UTC'
     USE_TZ = True
     SITEURL = 'http://localhost:9000'
+    VERSION = '0.1.0'
     
     # Redis
     redis = RedisKeys()

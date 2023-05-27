@@ -8,17 +8,16 @@ from .data import *
 
 
 SUPER_EMAIL = 'super@gmail.com'
-VERIFIED_EMAIL_SET = {'verified@gmail.com', 'ver2@app.co', 'ver3@app.co', 'ver4@app.co'}    # Don't change order
+VERIFIED_EMAIL_SET = {'verified@gmail.com', 'ver2@app.co'}    # Don't change order
 UNVERIFIED_EMAIL = 'unverified@gmail.com'
 INACTIVE_VERIFIED_EMAIL = 'inactive_verified@gmail.com'
 INACTIVE_UNVERIFIED_EMAIL = 'inactive_unverified@gmail.com'
-BANNED_EMAIL = 'banned@gmail.com'
+FIXTURE_PASSWORD = 'pass123'        # noqa
 
 
 async def seed_accounts() -> list[str]:
     """Create nenw accounts for testing"""
     total = 0
-    password = 'pass123'        # noqa
     
     current_emails = await Account.all().values_list('email', flat=True)
     admin_role = await Role.get_or_none(name='admin')
@@ -32,12 +31,24 @@ async def seed_accounts() -> list[str]:
         acct.role = role
         await acct.save(update_fields=['role_id'])
     
+        # accounts: list[Account] = await Account.all().prefetch_related('groups')
+        # for account in accounts:
+        #     if account.email == 'ver2@app.co':
+        #         account.authtoken = {}
+        #     elif account.email == 'ver3@app.co':
+        #         exp = '2030-01-01T00:00:00+00:00'
+        #         account.authtoken = dict(expires=exp, blacklist=True, refresh_token='abc')
+        #     elif account.email == 'ver4@app.co':
+        #         exp = '2020-01-01T00:00:00+00:00'
+        #         account.authtoken = dict(expires=exp, blacklist=True, refresh_token='abc')
+        #     await account.save(update_fields=['authtoken'])
+
     # Super users
     dataset = {SUPER_EMAIL}     # noqa
     createset = dataset - set(current_emails)
     if createset:
         for email in createset:
-            if account := await AuthHelper.create_user(email=email, password=password, is_superuser=True,
+            if account := await AuthHelper.create_user(email=email, password=FIXTURE_PASSWORD, is_superuser=True,
                                                        is_verified=True):
                 await _set_role(account, admin_role)
                 _cache_groups(account.id, set(account.role.groups))
@@ -47,7 +58,7 @@ async def seed_accounts() -> list[str]:
     createset = VERIFIED_EMAIL_SET - set(current_emails)
     if createset:
         for email in createset:
-            if account := await AuthHelper.create_user(email=email, password=password, is_verified=True):
+            if account := await AuthHelper.create_user(email=email, password=FIXTURE_PASSWORD, is_verified=True):
                 _cache_groups(account.id, set(account.role.groups))
                 total += 1
                 
@@ -62,7 +73,7 @@ async def seed_accounts() -> list[str]:
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if account := await AuthHelper.create_user(email=i, password=password):
+            if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD):
                 _cache_groups(account.id, set(account.role.groups))
                 total += 1
     
@@ -70,7 +81,7 @@ async def seed_accounts() -> list[str]:
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if account := await AuthHelper.create_user(email=i, password=password,is_verified=True,
+            if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD, is_verified=True,
                                                        is_active=False):
                 _cache_groups(account.id, set(account.role.groups))
                 total += 1
@@ -79,16 +90,7 @@ async def seed_accounts() -> list[str]:
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if account := await AuthHelper.create_user(email=i, password=password, is_active=False):
-                _cache_groups(account.id, set(account.role.groups))
-                total += 1
-    
-    dataset = {BANNED_EMAIL}                                                                        # noqa
-    createset = dataset - set(current_emails)
-    if createset:
-        for i in createset:
-            if account := await AuthHelper.create_user(email=i, password=password, is_verified=True,
-                                                       is_banned=True):
+            if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD, is_active=False):
                 _cache_groups(account.id, set(account.role.groups))
                 total += 1
     

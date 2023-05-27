@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS "auth_account" (
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ,
     "display" VARCHAR(199) NOT NULL,
-    "is_banned" BOOL NOT NULL  DEFAULT False,
     "options" JSONB NOT NULL,
     "perms" text[],
     "email" VARCHAR(255) NOT NULL UNIQUE,

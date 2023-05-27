@@ -1,12 +1,15 @@
+import datetime
+
 import pytest, time
 from collections import Counter
 from pytest import mark
 from tortoise.query_utils import Prefetch
+from freezegun import freeze_time
 
 from app import ic, settings as s, red, exceptions as x
 from app.auth import Account, Group, Role
 from fixtures import SUPER_EMAIL, VERIFIED_EMAIL_SET, UNVERIFIED_EMAIL, INACTIVE_VERIFIED_EMAIL, \
-    INACTIVE_UNVERIFIED_EMAIL, BANNED_EMAIL
+    INACTIVE_UNVERIFIED_EMAIL, FIXTURE_PASSWORD
 
 
 
@@ -23,21 +26,18 @@ class TestAuth:
                 assert i.is_superuser
                 assert i.is_verified
                 assert i.is_active
-                assert not i.is_banned
                 assert i.options.get('lang') ==  'en-us'
             elif i.email in VERIFIED_EMAIL_SET:
                 assert i.role == starter_role
                 assert not i.is_superuser
                 assert i.is_verified
                 assert i.is_active
-                assert not i.is_banned
                 assert i.options.get('lang') ==  'en-us'
             elif i.email == UNVERIFIED_EMAIL:
                 assert i.role == starter_role
                 assert not i.is_superuser
                 assert not i.is_verified
                 assert i.is_active
-                assert not i.is_banned
                 assert i.options.get('lang') ==  'en-us'
             elif i.email == INACTIVE_VERIFIED_EMAIL:
                 assert i.role == starter_role
@@ -45,19 +45,11 @@ class TestAuth:
                 assert i.is_verified
                 assert not i.is_active
                 assert i.options.get('lang') ==  'en-us'
-                assert not i.is_banned
             elif i.email == INACTIVE_UNVERIFIED_EMAIL:
                 assert i.role == starter_role
                 assert not i.is_superuser
                 assert not i.is_verified
                 assert not i.is_active
-                assert not i.is_banned
-            elif i.email == BANNED_EMAIL:
-                assert i.role == starter_role
-                assert not i.is_superuser
-                assert i.is_verified
-                assert i.is_active
-                assert i.is_banned
             
 
     # @mark.focus
@@ -152,6 +144,126 @@ class TestAuth:
         assert await superuser.change_role(account, admin_role) is None
         assert await account.permissions == permset
         assert account.role == starter_role
+
+
+class TestAuthIntegration:
+    # @mark.focus
+    async def test_route_login(self, client):
+        for i in {SUPER_EMAIL, list(VERIFIED_EMAIL_SET)[0]}:
+            data = await client.post('/auth/login',
+                                     data=dict(username=i, password=FIXTURE_PASSWORD))
+            data = data.json()
+            assert Counter(['access_token', 'token_type']) == Counter(data.keys())
+            assert data.get('token_type') == 'bearer'
+        
+        for i in {INACTIVE_VERIFIED_EMAIL, INACTIVE_UNVERIFIED_EMAIL}:
+            data = await client.post('/auth/login',
+                                     data=dict(username=i, password=FIXTURE_PASSWORD))
+            detail = data.json()['detail']
+            assert detail == 'LOGIN_BAD_CREDENTIALS'
+
+        data = await client.post('/auth/login',
+                                 data=dict(username=UNVERIFIED_EMAIL, password=FIXTURE_PASSWORD))
+        detail = data.json()['detail']
+        assert detail == 'LOGIN_USER_NOT_VERIFIED'
+
+        data = await client.post('/auth/login',
+                                 data=dict(username='ver2@app.co', password=FIXTURE_PASSWORD))
+        data = data.json()
+        assert Counter(['access_token', 'token_type']) == Counter(data.keys())
+        assert data.get('token_type') == 'bearer'
+
+    # @mark.focus
+    # async def test_access_token(self, mock_login, mock_token):
+    #     with freeze_time('2099-06-01 00:00:00') as ft:
+    #         # await _clear_authtoken()
+    #         _, atoken1, _type1 = await mock_login()
+    #         hashes = {atoken1}
+    #         ft.move_to('2022-06-01 00:00:01')
+    #         _, atoken2, _type2 = await mock_login()
+    #         hashes.add(atoken2)
+    #         assert atoken1
+    #         assert _type1 == 'bearer' and _type2 == 'bearer'
+    #         assert len(hashes) == 2
+    
+        # with freeze_time('2099-06-01 00:00:00') as ft:
+        #     # await _clear_authtoken()
+        #     refresh_token, access_token, _ = await mock_login()
+        #     hashes = {access_token}
+        #
+        #     ft.move_to('2022-06-01 00:00:01')
+        #     await mock_token(refresh_token, access_token)
+        #     # hashes.add(atoken)
+        #     # assert _type == 'bearer'
+        #     # assert len(hashes) == 2
+
+        # with freeze_time('2022-06-01 00:00:00') as ft:
+        #     await _clear_authtoken()
+        #     refresh_token, access_token, _ = await mock_login(client)
+        #     hashes = {access_token}
+        #
+        #     ft.move_to('2022-06-02 21:59:59')
+        #     atoken, _type = await mock_token(client, refresh_token, access_token)
+        #     hashes.add(atoken)
+        #     assert _type == 'bearer'
+        #     assert len(hashes) == 2
+        #
+        # with freeze_time('2022-06-01 00:00:00') as ft:
+        #     await _clear_authtoken()
+        #     refresh_token, access_token, _ = await mock_login(client)
+        #     hashes = {access_token}
+        #
+        #     ft.move_to('2022-06-03 00:00:00')
+        #     with pytest.raises(KeyError, match='access_token'):
+        #         await mock_token(client, refresh_token, access_token)
+        #         hashes.add(atoken)
+        #     assert len(hashes) == 1
+        #
+        # datelist = [
+        #     '2022-06-03 00:00:01',
+        #     '2022-06-03 00:00:02',
+        #     '2022-06-03 00:01:02',
+        #     '2022-06-03 01:01:02',
+        # ]
+        # for date_str in datelist:
+        #     with freeze_time('2022-06-01 00:00:00') as ft:
+        #         await _clear_authtoken()
+        #         refresh_token, access_token, _ = await mock_login(client)
+        #         hashes = {access_token}
+        #
+        #         ft.move_to(date_str)
+        #         match = 'Cookie expires date must be greater than the date now'
+        #         with pytest.raises(ValueError, match=match):
+        #             await mock_token(client, refresh_token, access_token)
+        #             hashes.add(atoken)
+        #         assert len(hashes) == 1
+
+    # @mark.focus
+    # async def test_refresh_token(self, initdb, client, mock_login, mock_token):
+    #     # 1 secord before s.REFRESH_TOKEN_CUTOFF
+    #     with freeze_time('2099-06-01 00:00:00') as ft:
+    #         pass
+    #         # account = await Account.get(email=login_dict['username']).values('id')
+    #         # userid = account['id']
+    #         # await clear_refresh_token(userid)
+    #         refresh_token, access_token, _ = await mock_login()
+    #
+    #         ft.move_to('2099-06-01 00:00:01')
+    #         # await mock_token(client, refresh_token, access_token)
+    #         # authtoken, userid = await get_authtoken()
+    #         # rtoken_redis = await Account.fetch(userid, 'authtoken_token')
+    #         # assert rtoken_redis == refresh_token
+    #         # assert rtoken_redis == authtoken['refresh_token']
+    #         # ic(authtoken)
+    #
+    #         # ft.move_to('2022-06-02 21:59:59')
+    #         # await mock_token(client, refresh_token, access_token)
+    #         # authtoken, _ = await get_authtoken()
+    #         # rtoken_redis = await Account.fetch(userid, 'authtoken_token')
+    #         # assert rtoken_redis == refresh_token
+    #         # assert rtoken_redis == authtoken['refresh_token']
+    #         # # ic(authtoken)
+        
 
 class TestGroup:
     async def test_groups(self, initdb):

@@ -7,6 +7,7 @@ from icecream import IceCreamDebugger
 from .schemas import *
 from .exceptions import *
 from .settings import settings
+from .utils import *
 from .db import register_db, red
 
 

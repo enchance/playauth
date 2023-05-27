@@ -14,12 +14,25 @@ from app.auth import AccountRes, fusers, UserRead, UserCreate, auth_backend, cur
 from fixtures import fixture_router
 
 
+
+async def on_startup():
+    ic('STARTED')
+
+async def on_shutdown():
+    ic('STOPPED')
+    
 def get_app() -> FastAPI:
-    app_ = FastAPI()
+    config = dict(debug=s.DEBUG, title=s.SITENAME, version=s.VERSION,
+                  on_startup=[on_startup], on_shutdown=[on_shutdown])
+    if not s.DEBUG:
+        config['docs_url'] = None
+        config['redoc_url'] = None
+        config['swagger_ui_oauth2_redirect_url'] = None
+    app_ = FastAPI(**config)
     
     # Routes
     app_.include_router(fusers.get_register_router(UserRead, UserCreate), prefix='/auth', tags=['auth'])
-    app_.include_router(fusers.get_auth_router(auth_backend), prefix='/auth', tags=['auth'])
+    app_.include_router(fusers.get_auth_router(auth_backend, requires_verification=True), prefix='/auth', tags=['auth'])
     
     # Dev
     if s.ENV == Env.development:
