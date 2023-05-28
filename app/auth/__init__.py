@@ -206,15 +206,15 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
         if diff <= 0:
             # TESTME: Untested
             red.delete(cachekey)
-            ic(f'LOGOUT: {diff} mins')
+            # ic(f'LOGOUT: {diff} mins')
             raise InvalidToken()                                                                   # Logout
         if diff <= s.REFRESH_TOKEN_REGENERATE / 60:
             # TESTME: Untested
-            ic(f'WINDOW REGENERATION: {diff} mins')
+            # ic(f'WINDOW REGENERATION: {diff} mins')
             cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate expires
         else:
             # TESTME: Untested
-            ic(f'FORCED REGENERATION: {diff} mins')
+            # ic(f'FORCED REGENERATION: {diff} mins')
             cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=expdateiso)      # Retain expires
     else:
         raise InvalidToken()

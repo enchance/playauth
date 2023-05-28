@@ -288,24 +288,32 @@ class TestAuthIntegration:
     @mark.focus
     async def test_refresh_access_token(self, client, mock_login):
         starter_dt = datetime(2099, 6, 1)
+        exp = starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL)
+        exp_str = AuthHelper.format_expiresiso(exp.isoformat())
     
         with freeze_time(starter_dt) as ft:
             refresh_token, access_token, _ = await mock_login()
             headers = dict(authorization=f'bearer {access_token}')
-            exp = starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL)
-            exp_str = AuthHelper.format_expiresiso(exp.isoformat())
             cookie = dict(refresh_token=refresh_token)
             
-            # Missing cookie
+            # No cookie
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers)
             data = data.json()
             assert data['detail'] == 'INVALID_TOKEN'
 
-            # Partial regeneration
+            # Forced regeneration
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
             data = data.json()
             assert data['access_token']
             assert data['token_type'] == 'bearer'
+            
+            # On time
+            
+            # 1 sec early
+            
+            # 1 sec late
+            
+            # Deleted
 
             # # Exact exp
             # # timedelta doesn't work since it gets the diff based on the cache
