@@ -70,9 +70,10 @@ class AuthHelper:
         raise InvalidToken()
     
     @classmethod
-    def refresh_cookie_generator(cls, *, expiresiso: Optional[str] = None, **kwargs) -> dict:
+    def refresh_cookie_generator(cls, *, refresh_token: Optional[str] = None, expiresiso: Optional[str] = None,
+                                 **kwargs) -> dict:
         """Generate the data for a new cookie but not the cookie itself."""
-        refresh_token = secrets.token_hex(nbytes=32)
+        token = refresh_token or secrets.token_hex(nbytes=32)
         fallback_iso = (datetime.now(tz=pytz.UTC) + timedelta(seconds=s.REFRESH_TOKEN_TTL)).isoformat()
         
         # data_dict = dict(expiresiso=fallback_iso)
@@ -89,7 +90,7 @@ class AuthHelper:
             
         return {
             'key':      'refresh_token',
-            'value':    refresh_token,
+            'value':    token,
             'httponly': True,
             'expires':  expires,
             'path':     s.JWT_AUTH_PREFIX,
@@ -196,26 +197,29 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     """
     # https://github.com/fastapi-users/fastapi-users/discussions/350
     # https://stackoverflow.com/questions/57650692/where-to-store-the-refresh-token-on-the-client#answer-57826596
-    cachekey = s.redis.REFRESH_TOKEN.format(refresh_token)
-    
     if refresh_token is None:
         raise InvalidToken()
+    
+    cachekey = s.redis.REFRESH_TOKEN.format(refresh_token)
     
     if expdateiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
         diff = AuthHelper.expiry_diff_minutes(expdateiso)
         if diff <= 0:
             # TESTME: Untested
             red.delete(cachekey)
-            # ic(f'LOGOUT: {diff} mins')
-            raise InvalidToken()                                                                   # Logout
+            ic(f'LOGOUT: {diff} mins')
+            raise InvalidToken()                                                            # Logout
         if diff <= s.REFRESH_TOKEN_REGENERATE / 60:
+            # Generate a new random cookie
             # TESTME: Untested
-            # ic(f'WINDOW REGENERATION: {diff} mins')
-            cookiedata = AuthHelper.refresh_cookie_generator()                                  # Regenerate expires
+            ic(f'WINDOW REGENERATION: {diff} mins')
+            cookiedata = AuthHelper.refresh_cookie_generator()                              # Regenerate cookie
         else:
+            # Use the same cookie data
             # TESTME: Untested
-            # ic(f'FORCED REGENERATION: {diff} mins')
-            cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=expdateiso)      # Retain expires
+            ic(f'FORCED REGENERATION: {diff} mins')
+            cookiedata = AuthHelper.refresh_cookie_generator(expiresiso=expdateiso,
+                                                             refresh_token=refresh_token)          # Same cookie
     else:
         raise InvalidToken()
     

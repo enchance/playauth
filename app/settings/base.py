@@ -33,7 +33,7 @@ class BaseSettings:
     REFRESH_TOKEN_TTL = 3600 * 24 * 7       # sec
     VERIFY_TOKEN_TTL = 3600 * 2             # sec
     RESET_PASSWORD_TOKEN_TTL = 3600         # sec
-    REFRESH_TOKEN_REGENERATE = 3600 * 3     # sec
+    REFRESH_TOKEN_REGENERATE = 3600 * 12    # sec
     
     # Routes
     JWT_AUTH_PREFIX = '/auth/jwt'

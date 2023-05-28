@@ -299,6 +299,7 @@ class TestAuthIntegration:
             # No cookie
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers)
             data = data.json()
+            assert data.status_code == 403
             assert data['detail'] == 'INVALID_TOKEN'
 
             # Forced regeneration
@@ -306,26 +307,36 @@ class TestAuthIntegration:
             data = data.json()
             assert data['access_token']
             assert data['token_type'] == 'bearer'
-            
-            # On time
+
+            # Expired access token
+            ft.move_to(starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL))
+            data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            assert data.status_code == 401
+
+        with freeze_time(starter_dt) as ft:
+            refresh_token, access_token, _ = await mock_login()
+            headers = dict(authorization=f'bearer {access_token}')
+            cookie = dict(refresh_token=refresh_token)
+
+            # Forced regeneration
+            data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            data = data.json()
+            assert data['access_token']
+            assert data['token_type'] == 'bearer'
             
             # 1 sec early
+            # TESTME: Untested
             
             # 1 sec late
+            # TESTME: Untested
             
-            # Deleted
-
-            # # Exact exp
-            # # timedelta doesn't work since it gets the diff based on the cache
-            # ft.move_to(starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL))
-            # data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
-            # data = data.json()
-            # assert data['detail'] == 'Unauthorized'
-            #
-            # ft.move_to(starter_dt + timedelta(minutes=10))
-            # data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
-            # data = data.json()
-            # ic(data)
+            # Deleted cache
+            cachekey = s.redis.REFRESH_TOKEN.format(refresh_token)
+            red.delete(cachekey)
+            data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            data = data.json()
+            assert data.status_code == 403
+            assert data['detail'] == 'INVALID_TOKEN'
 
 
 class TestGroup:
