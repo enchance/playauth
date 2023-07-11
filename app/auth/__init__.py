@@ -204,6 +204,7 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     
     if expdateiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
         diff = AuthHelper.expiry_diff_minutes(expdateiso)
+        ic(f'DIFF: {diff} mins')
         if diff <= 0:
             # TESTME: Untested
             red.delete(cachekey)

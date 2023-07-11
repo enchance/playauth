@@ -288,6 +288,7 @@ class TestAuthIntegration:
     @mark.focus
     async def test_refresh_access_token(self, client, mock_login):
         starter_dt = datetime(2099, 6, 1)
+        refexpiry_dt = starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL)
         exp = starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL)
         exp_str = AuthHelper.format_expiresiso(exp.isoformat())
     
@@ -295,13 +296,13 @@ class TestAuthIntegration:
             refresh_token, access_token, _ = await mock_login()
             headers = dict(authorization=f'bearer {access_token}')
             cookie = dict(refresh_token=refresh_token)
-            
+
             # No cookie
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers)
             assert data.status_code == 403
             data = data.json()
             assert data['detail'] == 'INVALID_TOKEN'
-            
+
             # Forced regeneration
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
             data = data.json()
@@ -313,7 +314,7 @@ class TestAuthIntegration:
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
             assert data.status_code == 401
 
-        with freeze_time(starter_dt) as ft:
+        with freeze_time(starter_dt) as _:
             refresh_token, access_token, _ = await mock_login()
             headers = dict(authorization=f'bearer {access_token}')
             cookie = dict(refresh_token=refresh_token)
@@ -324,12 +325,28 @@ class TestAuthIntegration:
             assert data['access_token']
             assert data['token_type'] == 'bearer'
 
-            # 1 sec early
-            # TESTME: Untested
+        with freeze_time(refexpiry_dt - timedelta(seconds=s.ACCESS_TOKEN_TTL)) as ft:
+            refresh_token, access_token, _ = await mock_login()
+            headers = dict(authorization=f'bearer {access_token}')
+            cookie = dict(refresh_token=refresh_token)
 
-            # 1 sec late
-            # TESTME: Untested
+            # 1 sec before reftoken expires
+            ft.move_to(starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL - 1))
+            data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            data = data.json()
+            assert data['access_token']
+            assert data['token_type'] == 'bearer'
 
+            # 1 sec after reftoken expires
+            ft.move_to(starter_dt + timedelta(seconds=s.REFRESH_TOKEN_TTL + 1))
+            data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
+            assert data.status_code == 401
+
+        with freeze_time(starter_dt) as _:
+            refresh_token, access_token, _ = await mock_login()
+            headers = dict(authorization=f'bearer {access_token}')
+            cookie = dict(refresh_token=refresh_token)
+            
             # Deleted cache
             cachekey = s.redis.REFRESH_TOKEN.format(refresh_token)
             red.delete(cachekey)
