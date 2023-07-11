@@ -204,7 +204,7 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     
     if expdateiso := await AuthHelper.fetch_cached_reftoken(refresh_token):
         diff = AuthHelper.expiry_diff_minutes(expdateiso)
-        ic(f'DIFF: {diff} mins')
+        # ic(f'DIFF: {diff} mins')
         if diff <= 0:
             # TESTME: Untested
             red.delete(cachekey)
@@ -224,12 +224,16 @@ async def refresh_access_token(strategy: Annotated[JWTStrategy, Depends(get_jwt_
     else:
         raise InvalidToken()
     
+    # Create new access token
     access_token = await strategy.write_token(account)
     content = BearerResponse(access_token=access_token, token_type='bearer')
+    
+    # Return new access token with a new refresh token on the side
     response = JSONResponse(content.dict())
     expiresiso = cookiedata.pop('expiresiso')
     response.set_cookie(**cookiedata)
 
+    # Save new refresh token to cache
     cachekey = s.redis.REFRESH_TOKEN.format(cookiedata['value'])
     red.set(cachekey, dict(uid=str(account.id), exp=expiresiso))
     
