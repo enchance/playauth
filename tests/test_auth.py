@@ -298,10 +298,10 @@ class TestAuthIntegration:
             
             # No cookie
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers)
-            data = data.json()
             assert data.status_code == 403
+            data = data.json()
             assert data['detail'] == 'INVALID_TOKEN'
-
+            
             # Forced regeneration
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
             data = data.json()
@@ -323,19 +323,19 @@ class TestAuthIntegration:
             data = data.json()
             assert data['access_token']
             assert data['token_type'] == 'bearer'
-            
+
             # 1 sec early
             # TESTME: Untested
-            
+
             # 1 sec late
             # TESTME: Untested
-            
+
             # Deleted cache
             cachekey = s.redis.REFRESH_TOKEN.format(refresh_token)
             red.delete(cachekey)
             data = await client.post(f'{s.JWT_AUTH_PREFIX}/refresh', headers=headers, cookies=cookie)
-            data = data.json()
             assert data.status_code == 403
+            data = data.json()
             assert data['detail'] == 'INVALID_TOKEN'
 
 
