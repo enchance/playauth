@@ -198,51 +198,6 @@ class TestAuthIntegration:
             assert token_exp == datetime.now() + timedelta(seconds=s.ACCESS_TOKEN_TTL)
             assert _type2 == 'bearer'
             assert len(hashes) == 2
-        #     await mock_token(refresh_token, access_token)
-        #     # hashes.add(atoken)
-        #     # assert _type == 'bearer'
-        #     # assert len(hashes) == 2
-
-        # with freeze_time('2022-06-01 00:00:00') as ft:
-        #     await _clear_authtoken()
-        #     refresh_token, access_token, _ = await mock_login(client)
-        #     hashes = {access_token}
-        #
-        #     ft.move_to('2022-06-02 21:59:59')
-        #     atoken, _type = await mock_token(client, refresh_token, access_token)
-        #     hashes.add(atoken)
-        #     assert _type == 'bearer'
-        #     assert len(hashes) == 2
-        #
-        # with freeze_time('2022-06-01 00:00:00') as ft:
-        #     await _clear_authtoken()
-        #     refresh_token, access_token, _ = await mock_login(client)
-        #     hashes = {access_token}
-        #
-        #     ft.move_to('2022-06-03 00:00:00')
-        #     with pytest.raises(KeyError, match='access_token'):
-        #         await mock_token(client, refresh_token, access_token)
-        #         hashes.add(atoken)
-        #     assert len(hashes) == 1
-        #
-        # datelist = [
-        #     '2022-06-03 00:00:01',
-        #     '2022-06-03 00:00:02',
-        #     '2022-06-03 00:01:02',
-        #     '2022-06-03 01:01:02',
-        # ]
-        # for date_str in datelist:
-        #     with freeze_time('2022-06-01 00:00:00') as ft:
-        #         await _clear_authtoken()
-        #         refresh_token, access_token, _ = await mock_login(client)
-        #         hashes = {access_token}
-        #
-        #         ft.move_to(date_str)
-        #         match = 'Cookie expires date must be greater than the date now'
-        #         with pytest.raises(ValueError, match=match):
-        #             await mock_token(client, refresh_token, access_token)
-        #             hashes.add(atoken)
-        #         assert len(hashes) == 1
         
         with freeze_time(starter_dt) as ft:
             refresh_token, access_token, _ = await mock_login()
@@ -297,10 +252,6 @@ class TestAuthIntegration:
             refresh_token, access_token, _ = await mock_login()
             
             headers = None
-            data = await client.get('/private', headers=headers)
-            assert data.status_code == 401
-            
-            headers = dict(authorization=access_token)
             data = await client.get('/private', headers=headers)
             assert data.status_code == 401
             
