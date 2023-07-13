@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import settings as s, register_db, Env, ic
 from app.auth import AccountRes, fusers, UserRead, UserCreate, auth_backend, current_user, bearer_transport, \
-    get_jwt_strategy, AuthHelper, Account, Group, authrouter
+    get_jwt_strategy, AuthHelper, Account, Group
+from app.routes import authrouter, devrouter
 from fixtures import fixture_router
 
 
@@ -33,6 +34,7 @@ def get_app() -> FastAPI:
     app_.include_router(authrouter, tags=['auth'])
     
     # Dev
+    app_.include_router(devrouter, prefix='/dev', tags=['development'])
     if s.ENV == Env.development:
         app_.include_router(fixture_router, prefix='/fixtures', tags=['fixtures'])
     

@@ -23,7 +23,7 @@ class BaseSettings:
     redis = RedisKeys()
     
     # Account
-    DISPLAY_MAX = 4
+    DISPLAY_MAX = 100
     PASSWORD_MIN = 12
     
     # Authentication

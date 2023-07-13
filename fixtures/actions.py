@@ -1,19 +1,17 @@
-import uuid
+import uuid, secrets
+from faker import Faker
 from decouple import config
 
-from app import ic, red
+from app import (
+    ic, red, SUPER_EMAIL, VERIFIED_EMAIL_SET, UNVERIFIED_EMAIL,
+    INACTIVE_VERIFIED_EMAIL, INACTIVE_UNVERIFIED_EMAIL, FIXTURE_PASSWORD
+)
 from app.settings import settings as s
 from app.auth import Account, Group, Role, AuthHelper
 from .data import *
 
 
-SUPER_EMAIL = 'super@gmail.com'
-VERIFIED_EMAIL_SET = {'verified@gmail.com', 'ver2@app.co'}    # Don't change order
-UNVERIFIED_EMAIL = 'unverified@gmail.com'
-INACTIVE_VERIFIED_EMAIL = 'inactive_verified@gmail.com'
-INACTIVE_UNVERIFIED_EMAIL = 'inactive_unverified@gmail.com'
-FIXTURE_PASSWORD = 'pass123'        # noqa
-
+faker = Faker()
 
 async def seed_accounts() -> list[str]:
     """Create nenw accounts for testing"""
@@ -21,11 +19,6 @@ async def seed_accounts() -> list[str]:
     
     current_emails = await Account.all().values_list('email', flat=True)
     admin_role = await Role.get_or_none(name='admin')
-    starter_role = await Role.get_or_none(name='starter')
-    
-    def _cache_groups(uid: uuid.UUID, datalist: set[str]):
-        cachekey = s.redis.ACCOUNT_GROUPS.format(uid)
-        red.set(cachekey, datalist)       # noqa
         
     async def _set_role(acct: Account, role: Role):
         acct.role = role
@@ -49,51 +42,48 @@ async def seed_accounts() -> list[str]:
     if createset:
         for email in createset:
             if account := await AuthHelper.create_user(email=email, password=FIXTURE_PASSWORD, is_superuser=True,
-                                                       is_verified=True):
+                                                       is_verified=True, display=faker.name()):
                 await _set_role(account, admin_role)
-                _cache_groups(account.id, set(account.role.groups))
                 total += 1
-    
+
     # Verified users
     createset = VERIFIED_EMAIL_SET - set(current_emails)
     if createset:
         for email in createset:
-            if account := await AuthHelper.create_user(email=email, password=FIXTURE_PASSWORD, is_verified=True):
-                _cache_groups(account.id, set(account.role.groups))
+            if account := await AuthHelper.create_user(email=email, password=FIXTURE_PASSWORD, is_verified=True,
+                                                       display=faker.name()):
                 total += 1
-                
+            
                 # Custom perms
                 if account.email == list(VERIFIED_EMAIL_SET)[0]:
                     account.perms = {'perms.attach', '-account.update'}
                     await account.save(update_fields=['perms'])
-                
-                
+
+
     # Unverified users
     dataset = {UNVERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD):
-                _cache_groups(account.id, set(account.role.groups))
+            if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD, display=faker.name()):
                 total += 1
-    
+
     dataset = {INACTIVE_VERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
             if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD, is_verified=True,
-                                                       is_active=False):
-                _cache_groups(account.id, set(account.role.groups))
+                                                       is_active=False, display=faker.name()):
                 total += 1
-    
+
     dataset = {INACTIVE_UNVERIFIED_EMAIL}
     createset = dataset - set(current_emails)
     if createset:
         for i in createset:
-            if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD, is_active=False):
-                _cache_groups(account.id, set(account.role.groups))
+            if account := await AuthHelper.create_user(email=i, password=FIXTURE_PASSWORD, is_active=False,
+                                                       display=faker.name()):
                 total += 1
-    
+
     return [f'ACCOUNTS_CREATED - {total} new']
 
 

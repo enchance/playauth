@@ -29,25 +29,25 @@ class TestAuth:
                 assert i.is_superuser
                 assert i.is_verified
                 assert i.is_active
-                assert i.options.get('lang') ==  'en-us'
+                assert i.options.get('lang') == 'en-us'
             elif i.email in VERIFIED_EMAIL_SET:
                 assert i.role == starter_role
                 assert not i.is_superuser
                 assert i.is_verified
                 assert i.is_active
-                assert i.options.get('lang') ==  'en-us'
+                assert i.options.get('lang') == 'en-us'
             elif i.email == UNVERIFIED_EMAIL:
                 assert i.role == starter_role
                 assert not i.is_superuser
                 assert not i.is_verified
                 assert i.is_active
-                assert i.options.get('lang') ==  'en-us'
+                assert i.options.get('lang') == 'en-us'
             elif i.email == INACTIVE_VERIFIED_EMAIL:
                 assert i.role == starter_role
                 assert not i.is_superuser
                 assert i.is_verified
                 assert not i.is_active
-                assert i.options.get('lang') ==  'en-us'
+                assert i.options.get('lang') == 'en-us'
             elif i.email == INACTIVE_UNVERIFIED_EMAIL:
                 assert i.role == starter_role
                 assert not i.is_superuser

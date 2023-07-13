@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional
+from enum import IntEnum
 from pydantic import Field, validator, BaseModel, EmailStr
 from fastapi_users import schemas, models
 
@@ -40,3 +41,9 @@ class AccountRes(BaseModel):
     id: uuid.UUID
     display: str
     email: str
+
+
+class RoleTypes(IntEnum):
+    """The number is irrelevant. You're just after the name."""
+    admin = 1
+    starter = 2
